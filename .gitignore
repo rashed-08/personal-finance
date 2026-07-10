@@ -1,5 +1,6 @@
 .idea
 .vscode
+.DS_Store
 node_modules
 
 storage/postgres
@@ -8,6 +9,10 @@ storage/logs
 
 frontend/dist
 
+frontend/node_modules/
+
 backend/target
+
+*.log
 
 .env
