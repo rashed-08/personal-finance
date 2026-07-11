@@ -138,7 +138,7 @@ public final class Category {
 
         validateName(newName);
 
-        return new Category(id, newName, categoryType, systemDefined, active, description, createdAt, LocalDateTime.now());
+        return new Category(id, newName.trim(), categoryType, systemDefined, active, description, createdAt, LocalDateTime.now());
     }
 
     public Category changeDescription(String newDescription) {
@@ -168,5 +168,33 @@ public final class Category {
         }
 
         return new Category(id, name, categoryType, systemDefined, false, description, createdAt, LocalDateTime.now());
+    }
+
+    public Category update(
+        String name,
+        CategoryType categoryType,
+        String description
+    ) {
+
+        if (systemDefined) {
+            throw new IllegalStateException(
+                    "System-defined categories cannot be modified."
+            );
+        }
+
+        validateName(name);
+        validateCategoryType(categoryType);
+        validateDescription(description);
+
+        return new Category(
+                id,
+                name.trim(),
+                categoryType,
+                systemDefined,
+                active,
+                description,
+                createdAt,
+                LocalDateTime.now()
+        );
     }
 }

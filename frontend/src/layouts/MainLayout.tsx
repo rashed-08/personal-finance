@@ -1,31 +1,44 @@
-import { Link, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 
 export default function MainLayout() {
     return (
-        <div style={{ display: "flex", minHeight: "100vh" }}>
-            <aside
-                style={{
-                    width: "240px",
-                    padding: "20px",
-                    borderRight: "1px solid #ddd",
-                }}
-            >
-                <h2>Personal Finance</h2>
+        <div className="app-shell">
+            <aside className="sidebar">
+                <div className="brand">
+                    <div className="brand__mark">৳</div>
+                    <div>
+                        <div className="brand__name">Personal Finance</div>
+                        <div className="brand__sub">Money, tracked</div>
+                    </div>
+                </div>
 
-                <nav>
-                    <ul style={{ listStyle: "none", padding: 0 }}>
-                        <li>
-                            <Link to="/accounts">Accounts</Link>
-                        </li>
+                <nav className="nav">
+                    <div className="nav__label">Manage</div>
 
-                        <li>
-                            <Link to="/categories">Categories</Link>
-                        </li>
-                    </ul>
+                    <NavLink
+                        to="/accounts"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        Accounts
+                    </NavLink>
+
+                    <NavLink
+                        to="/categories"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        📂 Categories
+                    </NavLink>
+
+                    <span className="nav__item nav__item--disabled">
+                        Transactions
+                        <span className="nav__soon">Soon</span>
+                    </span>
                 </nav>
             </aside>
 
-            <main style={{ flex: 1, padding: "24px" }}>
+            <main className="content">
                 <Outlet />
             </main>
         </div>

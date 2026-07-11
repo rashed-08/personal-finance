@@ -1,75 +1,61 @@
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 
 interface Props {
-
     open: boolean;
-
     title: string;
-
     children: ReactNode;
-
     onClose: () => void;
 }
 
 export default function AccountDialog({
-
     open,
     title,
     children,
-    onClose
-
+    onClose,
 }: Props) {
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") {
+                onClose();
+            }
+        }
+
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [open, onClose]);
 
     if (!open) {
         return null;
     }
 
     return (
-
-        <div
-            style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(0,0,0,.4)",
-
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center"
-            }}
-        >
-
+        <div className="modal-overlay" onClick={onClose}>
             <div
-                style={{
-                    background: "white",
-                    width: 500,
-                    padding: 24,
-                    borderRadius: 8
-                }}
+                className="modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label={title}
+                onClick={(e) => e.stopPropagation()}
             >
-
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between"
-                    }}
-                >
-
-                    <h2>{title}</h2>
-
+                <div className="modal__header">
+                    <h2 className="modal__title">{title}</h2>
                     <button
+                        type="button"
+                        className="modal__close"
+                        aria-label="Close"
                         onClick={onClose}
                     >
                         ✕
                     </button>
-
                 </div>
 
-                {children}
-
+                <div className="modal__body">{children}</div>
             </div>
-
         </div>
-
     );
-
 }

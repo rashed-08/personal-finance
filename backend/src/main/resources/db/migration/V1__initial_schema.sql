@@ -115,15 +115,9 @@ CREATE TABLE categories (
 
     name                VARCHAR(100) NOT NULL,
 
+    description         VARCHAR(500),
+
     category_type       VARCHAR(20) NOT NULL,
-
-    parent_category_id  UUID,
-
-    color               VARCHAR(20),
-
-    icon                VARCHAR(100),
-
-    sort_order          INTEGER NOT NULL DEFAULT 0,
 
     is_system           BOOLEAN NOT NULL DEFAULT FALSE,
     is_active           BOOLEAN NOT NULL DEFAULT TRUE,
@@ -131,12 +125,16 @@ CREATE TABLE categories (
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_categories_parent
-        FOREIGN KEY (parent_category_id)
-        REFERENCES categories(id),
-
     CONSTRAINT uk_categories_name_type
-        UNIQUE (name, category_type)
+        UNIQUE (name, category_type),
+
+    CONSTRAINT chk_categories_type
+        CHECK (
+            category_type IN (
+                'INCOME',
+                'EXPENSE'
+            )
+        )
 );
 
 CREATE TRIGGER trg_categories_updated_at
@@ -780,9 +778,6 @@ CREATE INDEX idx_accounts_is_active
 
 CREATE INDEX idx_categories_type
     ON categories(category_type);
-
-CREATE INDEX idx_categories_parent
-    ON categories(parent_category_id);
 
 CREATE INDEX idx_categories_active
     ON categories(is_active);

@@ -2,9 +2,12 @@ package io.rashed.finance.application.category;
 
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
+
 import io.rashed.finance.domain.categories.Category;
 import io.rashed.finance.domain.categories.CategoryRepository;
 
+@Service
 public class CreateCategoryService {
 
     private final CategoryRepository repository;
