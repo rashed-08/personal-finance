@@ -1,4 +1,4 @@
-package io.rashed.finance.domain.transactions;
+package io.rashed.finance.application.transaction;
 
 import io.rashed.finance.common.enums.AdjustmentReason;
 import io.rashed.finance.common.enums.TransactionType;

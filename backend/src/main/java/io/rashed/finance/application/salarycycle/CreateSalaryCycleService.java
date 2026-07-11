@@ -1,6 +1,9 @@
-package io.rashed.finance.domain.salarycycle;
+package io.rashed.finance.application.salarycycle;
 
 import java.util.Objects;
+
+import io.rashed.finance.domain.salarycycle.SalaryCycle;
+import io.rashed.finance.domain.salarycycle.SalaryCycleRepository;
 
 public class CreateSalaryCycleService {
 

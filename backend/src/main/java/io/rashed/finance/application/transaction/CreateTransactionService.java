@@ -1,6 +1,10 @@
-package io.rashed.finance.domain.transactions;
+package io.rashed.finance.application.transaction;
 
 import java.util.Objects;
+
+import io.rashed.finance.domain.transactions.Transaction;
+import io.rashed.finance.domain.transactions.TransactionId;
+import io.rashed.finance.domain.transactions.TransactionRepository;
 
 public class CreateTransactionService {
 

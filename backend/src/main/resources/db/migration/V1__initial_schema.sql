@@ -85,7 +85,7 @@ CREATE TABLE accounts (
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_accounts_opening_balance
-        CHECK (opening_balance >= 0)
+        CHECK (opening_balance >= 0),
 
     CONSTRAINT chk_accounts_account_type
         CHECK (
@@ -894,7 +894,7 @@ CREATE INDEX idx_cash_reconciliation_date
     ON cash(reconciliation_date);
 
 CREATE INDEX idx_cash_adjustment_transaction
-    ON cash(adjustmentC_transaction_id);
+    ON cash(adjustment_transaction_id);
 
 -- ----------------------------------------------------------------------------
 -- Recurring Transactions

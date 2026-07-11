@@ -1,18 +1,15 @@
 package io.rashed.finance.domain.transactions;
 
-import java.io.Serializable;
-import java.util.Objects;
 import java.util.UUID;
+import io.rashed.finance.common.valueobject.EntityId;
 
 /**
  * Strongly typed identifier for Transaction aggregate.
  */
-public final class TransactionId implements Serializable {
-
-    private final UUID value;
+public final class TransactionId extends EntityId {
 
     private TransactionId(UUID value) {
-        this.value = Objects.requireNonNull(value, "Transaction ID cannot be null");
+        super(value);
     }
 
     /**
@@ -34,26 +31,5 @@ public final class TransactionId implements Serializable {
      */
     public static TransactionId of(String value) {
         return new TransactionId(UUID.fromString(value));
-    }
-
-    public UUID getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TransactionId that)) return false;
-        return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
     }
 }

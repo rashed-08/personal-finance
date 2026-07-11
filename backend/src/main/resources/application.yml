@@ -1,3 +1,13 @@
 spring:
+
+  application:
+    name: Personal Finance
+
   profiles:
     active: local
+
+  banner:
+    location: classpath:banner.txt
+
+server:
+  port: 8080

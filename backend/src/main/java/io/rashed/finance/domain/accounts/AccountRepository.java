@@ -27,7 +27,5 @@ public interface AccountRepository {
 
     List<Account> findByType(AccountType accountType);
 
-    void delete(Account account);
-
     void deleteById(AccountId id);
 }

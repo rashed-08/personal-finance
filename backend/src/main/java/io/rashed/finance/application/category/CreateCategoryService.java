@@ -1,6 +1,9 @@
-package io.rashed.finance.domain.categories;
+package io.rashed.finance.application.category;
 
 import java.util.Objects;
+
+import io.rashed.finance.domain.categories.Category;
+import io.rashed.finance.domain.categories.CategoryRepository;
 
 public class CreateCategoryService {
 

@@ -1,18 +1,15 @@
 package io.rashed.finance.domain.salarycycle;
 
-import java.io.Serializable;
-import java.util.Objects;
 import java.util.UUID;
+import io.rashed.finance.common.valueobject.EntityId;
 
 /**
  * Strongly typed identifier for SalaryCycle aggregate.
  */
-public final class SalaryCycleId implements Serializable {
-
-    private final UUID value;
+public final class SalaryCycleId extends EntityId {
 
     private SalaryCycleId(UUID value) {
-        this.value = Objects.requireNonNull(value, "Salary Cycle ID cannot be null");
+        super(value);
     }
 
     public static SalaryCycleId newId() {
@@ -25,24 +22,5 @@ public final class SalaryCycleId implements Serializable {
 
     public static SalaryCycleId of(String value) {
         return new SalaryCycleId(UUID.fromString(value));
-    }
-
-    public UUID getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || (o instanceof SalaryCycleId other && value.equals(other.value));
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return value.toString();
     }
 }

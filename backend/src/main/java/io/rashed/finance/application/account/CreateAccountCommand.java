@@ -1,4 +1,4 @@
-package io.rashed.finance.domain.accounts;
+package io.rashed.finance.application.account;
 
 import io.rashed.finance.common.enums.AccountType;
 import io.rashed.finance.common.valueobject.Money;

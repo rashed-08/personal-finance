@@ -1,4 +1,4 @@
-package io.rashed.finance.domain.categories;
+package io.rashed.finance.application.category;
 
 import io.rashed.finance.common.enums.CategoryType;
 

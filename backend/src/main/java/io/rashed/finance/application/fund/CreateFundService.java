@@ -1,6 +1,9 @@
-package io.rashed.finance.domain.funds;
+package io.rashed.finance.application.fund;
 
 import java.util.Objects;
+
+import io.rashed.finance.domain.funds.Fund;
+import io.rashed.finance.domain.funds.FundRepository;
 
 public class CreateFundService {
 

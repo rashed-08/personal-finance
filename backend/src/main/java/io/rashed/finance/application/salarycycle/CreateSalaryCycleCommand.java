@@ -1,4 +1,4 @@
-package io.rashed.finance.domain.salarycycle;
+package io.rashed.finance.application.salarycycle;
 
 import io.rashed.finance.common.valueobject.DateRange;
 
