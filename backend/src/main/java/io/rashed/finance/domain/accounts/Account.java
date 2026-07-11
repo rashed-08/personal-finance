@@ -155,4 +155,26 @@ public final class Account {
 
         return new Account(id, name, accountType, openingBalance, false, description, createdAt, LocalDateTime.now());
     }
+
+    public Account update(
+        String name,
+        AccountType accountType,
+        Money openingBalance,
+        String description
+    ) {
+
+        validateName(name);
+        validateOpeningBalance(openingBalance);
+
+        return new Account(
+                id,
+                name.trim(),
+                accountType,
+                openingBalance,
+                active,
+                description,
+                createdAt,
+                LocalDateTime.now()
+        );
+    }
 }

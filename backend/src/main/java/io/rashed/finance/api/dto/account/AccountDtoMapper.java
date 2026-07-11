@@ -1,5 +1,7 @@
 package io.rashed.finance.api.dto.account;
 
+import java.util.List;
+
 import io.rashed.finance.application.account.CreateAccountCommand;
 import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.Account;
@@ -9,9 +11,7 @@ public final class AccountDtoMapper {
     private AccountDtoMapper() {
     }
 
-    public static CreateAccountCommand toCommand(
-            CreateAccountRequest request
-    ) {
+    public static CreateAccountCommand toCommand(CreateAccountRequest request) {
 
         if (request == null) {
             return null;
@@ -43,5 +43,16 @@ public final class AccountDtoMapper {
                 account.getCreatedAt(),
                 account.getUpdatedAt()
         );
+    }
+
+    public static List<AccountResponse> toResponseList(List<Account> accounts) {
+
+        if (accounts == null) {
+            return List.of();
+        }
+
+        return accounts.stream()
+                .map(AccountDtoMapper::toResponse)
+                .toList();
     }
 }
