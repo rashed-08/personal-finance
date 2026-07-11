@@ -9,18 +9,17 @@
 INSERT INTO categories (
     name,
     category_type,
-    is_system,
-    sort_order
+    is_system
 )
 VALUES
-    ('Salary', 'INCOME', TRUE, 1),
-    ('Bonus', 'INCOME', TRUE, 2),
-    ('Business', 'INCOME', TRUE, 3),
-    ('Investment', 'INCOME', TRUE, 4),
-    ('Gift', 'INCOME', TRUE, 5),
-    ('Cashback', 'INCOME', TRUE, 6),
-    ('Refund', 'INCOME', TRUE, 7),
-    ('Other Income', 'INCOME', TRUE, 999)
+    ('Salary', 'INCOME', TRUE),
+    ('Bonus', 'INCOME', TRUE),
+    ('Business', 'INCOME', TRUE),
+    ('Investment', 'INCOME', TRUE),
+    ('Gift', 'INCOME', TRUE),
+    ('Cashback', 'INCOME', TRUE),
+    ('Refund', 'INCOME', TRUE),
+    ('Other Income', 'INCOME', TRUE)
 ON CONFLICT (name, category_type)
 DO NOTHING;
 
@@ -31,23 +30,22 @@ DO NOTHING;
 INSERT INTO categories (
     name,
     category_type,
-    is_system,
-    sort_order
+    is_system
 )
 VALUES
-    ('Food', 'EXPENSE', TRUE, 1),
-    ('Groceries', 'EXPENSE', TRUE, 2),
-    ('Transport', 'EXPENSE', TRUE, 3),
-    ('Utilities', 'EXPENSE', TRUE, 4),
-    ('Rent', 'EXPENSE', TRUE, 5),
-    ('Medical', 'EXPENSE', TRUE, 6),
-    ('Education', 'EXPENSE', TRUE, 7),
-    ('Shopping', 'EXPENSE', TRUE, 8),
-    ('Entertainment', 'EXPENSE', TRUE, 9),
-    ('Travel', 'EXPENSE', TRUE, 10),
-    ('Family', 'EXPENSE', TRUE, 11),
-    ('Donation', 'EXPENSE', TRUE, 12),
-    ('Afia', 'EXPENSE', TRUE, 13),
-    ('Other Expense', 'EXPENSE', TRUE, 999)
+    ('Food', 'EXPENSE', TRUE),
+    ('Groceries', 'EXPENSE', TRUE),
+    ('Transport', 'EXPENSE', TRUE),
+    ('Utilities', 'EXPENSE', TRUE),
+    ('Rent', 'EXPENSE', TRUE),
+    ('Medical', 'EXPENSE', TRUE),
+    ('Education', 'EXPENSE', TRUE),
+    ('Shopping', 'EXPENSE', TRUE),
+    ('Entertainment', 'EXPENSE', TRUE),
+    ('Travel', 'EXPENSE', TRUE),
+    ('Family', 'EXPENSE', TRUE),
+    ('Donation', 'EXPENSE', TRUE),
+    ('Afia', 'EXPENSE', TRUE),
+    ('Other Expense', 'EXPENSE', TRUE)
 ON CONFLICT (name, category_type)
 DO NOTHING;

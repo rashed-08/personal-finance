@@ -23,15 +23,12 @@ public class DeactivateAccountService {
 
     public Account execute(AccountId id){
 
-        Account account =
-                repository.findById(id)
-                        .orElseThrow();
+        Account account = repository.findById(id)
+        .orElseThrow();
 
+        Account deactivated = account.deactivate();
 
-        account.deactivate();
-
-
-        return repository.save(account);
+        return repository.save(deactivated);
     }
 
 }
