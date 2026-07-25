@@ -38,7 +38,9 @@ public record CreateTransactionCommand(
 
         AdjustmentReason adjustmentReason,
 
-        TransactionId referenceTransactionId
+        TransactionId referenceTransactionId,
+
+        boolean startsNewSalaryCycle
 
 ) {
 }

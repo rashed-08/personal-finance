@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import AccountsPage from "../app/accounts/page";
 import CategoriesPage from "../app/categories/page";
 import TransactionsPage from "../app/transactions/page";
+import SalaryCyclesPage from "../app/salary-cycles/page";
 
 export default function AppRoutes() {
     return (
@@ -27,6 +28,11 @@ export default function AppRoutes() {
                 <Route
                     path="transactions"
                     element={<TransactionsPage />}
+                />
+
+                <Route
+                    path="salary-cycles"
+                    element={<SalaryCyclesPage />}
                 />
 
             </Route>

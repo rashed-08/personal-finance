@@ -714,6 +714,22 @@ a {
   font-weight: 500;
 }
 
+.field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.field-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
 .input-affix {
   display: flex;
   align-items: center;
@@ -763,6 +779,41 @@ a {
   justify-content: flex-end;
   gap: 10px;
   padding-top: 4px;
+}
+
+/* =============================================================================
+   Carry forward panel (expandable row in the salary cycles table)
+   ========================================================================== */
+
+.carry-forward-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  font-size: 13px;
+}
+
+.carry-forward-panel--error {
+  color: var(--danger);
+}
+
+.carry-forward-panel__item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-muted);
+}
+
+.carry-forward-panel__item strong {
+  font-size: 14px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.carry-forward-panel__item--total strong {
+  color: var(--primary);
+  font-size: 15px;
 }
 
 /* =============================================================================

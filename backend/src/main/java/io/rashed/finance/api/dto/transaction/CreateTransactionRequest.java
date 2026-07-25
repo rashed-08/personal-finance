@@ -37,6 +37,13 @@ public record CreateTransactionRequest(
 
         String migrationBatchId,
 
-        UUID referenceTransactionId
+        UUID referenceTransactionId,
+
+        /**
+         * INCOME only. When true, the server closes the currently open
+         * salary cycle (if any) the day before transactionDate and opens a
+         * new one, ignoring salaryCycleId.
+         */
+        boolean startsNewSalaryCycle
 ) {
 }

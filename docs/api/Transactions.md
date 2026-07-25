@@ -58,7 +58,8 @@ Creates a new transaction. The transaction is always created as `POSTED` — Ver
   "notes": null,
   "adjustmentReason": null,
   "migrationBatchId": null,
-  "referenceTransactionId": null
+  "referenceTransactionId": null,
+  "startsNewSalaryCycle": false
 }
 ```
 
@@ -70,23 +71,32 @@ Creates a new transaction. The transaction is always created as `POSTED` — Ver
 | `fromAccountId` | UUID, conditional | Source account; see type table below |
 | `toAccountId` | UUID, conditional | Destination account; see type table below |
 | `categoryId` | UUID, conditional | Required for INCOME/EXPENSE, forbidden for TRANSFER |
-| `salaryCycleId` | UUID, conditional | Required for INCOME/EXPENSE/TRANSFER, unused otherwise |
+| `salaryCycleId` | UUID, conditional | Required for INCOME/EXPENSE/TRANSFER unless `startsNewSalaryCycle` is true |
 | `description` | string, optional | Short human-readable label |
 | `notes` | string, optional | Required when `adjustmentReason` is `MANUAL_CORRECTION` |
 | `adjustmentReason` | enum, conditional | Required for ADJUSTMENT |
 | `migrationBatchId` | string, conditional | Required for MIGRATION |
 | `referenceTransactionId` | UUID, optional | For ADJUSTMENT, the transaction being corrected (if any) |
+| `startsNewSalaryCycle` | boolean, optional, default `false` | INCOME only. See [Automatic Salary Cycle Creation](#automatic-salary-cycle-creation) |
 
 ## Required Fields by Transaction Type
 
 | Type | Required | Forbidden |
 |------|----------|-----------|
-| INCOME | `toAccountId`, `categoryId` (income category), `salaryCycleId` | `fromAccountId` |
+| INCOME | `toAccountId`, `categoryId` (income category), `salaryCycleId` (unless `startsNewSalaryCycle`) | `fromAccountId` |
 | EXPENSE | `fromAccountId`, `categoryId` (expense category), `salaryCycleId` | `toAccountId` |
 | TRANSFER | `fromAccountId`, `toAccountId` (must differ), `salaryCycleId` | `categoryId` |
 | ADJUSTMENT | `adjustmentReason` | not both `fromAccountId` and `toAccountId` at once |
 | OPENING_BALANCE | `toAccountId` | Only one per account, ever |
 | MIGRATION | `toAccountId`, `migrationBatchId` | — |
+
+## Automatic Salary Cycle Creation
+
+Setting `startsNewSalaryCycle: true` on an `INCOME` transaction closes the currently open salary cycle (if any)
+the day before `transactionDate` and opens a new one starting on it, per `docs/business/SalaryWorkflow.md`
+("every salary starts a new salary cycle"). `salaryCycleId` is ignored in this case — the server resolves it and
+uses the new cycle's id. Setting this flag on any other transaction type is rejected. See
+`docs/api/SalaryCycle.md` for the full cycle lifecycle.
 
 ## Cross-Aggregate Validation
 

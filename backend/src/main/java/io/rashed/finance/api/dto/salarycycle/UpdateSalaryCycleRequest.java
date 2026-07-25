@@ -5,15 +5,10 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record CreateSalaryCycleRequest(
+public record UpdateSalaryCycleRequest(
 
         @NotBlank
         String name,
-
-        @NotNull
-        LocalDate startDate,
-
-        LocalDate endDate,
 
         @NotNull
         LocalDate salaryDate,

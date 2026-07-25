@@ -31,7 +31,8 @@ public final class TransactionDtoMapper {
                 request.migrationBatchId(),
                 null,
                 request.adjustmentReason(),
-                request.referenceTransactionId() == null ? null : TransactionId.of(request.referenceTransactionId())
+                request.referenceTransactionId() == null ? null : TransactionId.of(request.referenceTransactionId()),
+                request.startsNewSalaryCycle()
         );
     }
 

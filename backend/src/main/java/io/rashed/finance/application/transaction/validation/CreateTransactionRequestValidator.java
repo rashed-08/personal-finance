@@ -2,6 +2,7 @@ package io.rashed.finance.application.transaction.validation;
 
 import io.rashed.finance.api.dto.transaction.CreateTransactionRequest;
 import io.rashed.finance.common.enums.AdjustmentReason;
+import io.rashed.finance.common.enums.TransactionType;
 import io.rashed.finance.common.exception.TransactionValidationException;
 
 public final class CreateTransactionRequestValidator {
@@ -10,6 +11,9 @@ public final class CreateTransactionRequestValidator {
     }
 
     public static void validate(CreateTransactionRequest request) {
+
+        require(!request.startsNewSalaryCycle() || request.transactionType() == TransactionType.INCOME,
+                "Only an income transaction can start a new salary cycle.");
 
         switch (request.transactionType()) {
 
@@ -50,8 +54,8 @@ public final class CreateTransactionRequestValidator {
         require(request.categoryId() != null,
                 "Income requires categoryId.");
 
-        require(request.salaryCycleId() != null,
-                "Income requires salaryCycleId.");
+        require(request.startsNewSalaryCycle() || request.salaryCycleId() != null,
+                "Income requires salaryCycleId unless it starts a new salary cycle.");
     }
 
     private static void validateTransfer(CreateTransactionRequest request) {

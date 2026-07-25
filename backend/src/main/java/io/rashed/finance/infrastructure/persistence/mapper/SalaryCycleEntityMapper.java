@@ -1,6 +1,5 @@
 package io.rashed.finance.infrastructure.persistence.mapper;
 
-import io.rashed.finance.common.valueobject.DateRange;
 import io.rashed.finance.domain.salarycycle.SalaryCycle;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.infrastructure.persistence.entity.SalaryCycleEntity;
@@ -21,8 +20,8 @@ public final class SalaryCycleEntityMapper {
         return new SalaryCycleEntity(
                 salaryCycle.getId().getValue(),
                 salaryCycle.getName(),
-                salaryCycle.getPeriod().getStartDate(),
-                salaryCycle.getPeriod().getEndDate(),
+                salaryCycle.getStartDate(),
+                salaryCycle.getEndDate(),
                 salaryCycle.getSalaryDate(),
                 BigDecimal.ZERO,
                 salaryCycle.isClosed(),
@@ -41,7 +40,8 @@ public final class SalaryCycleEntityMapper {
         return new SalaryCycle(
                 SalaryCycleId.of(entity.getId()),
                 entity.getCycleName(),
-                DateRange.of(entity.getCycleStartDate(), entity.getCycleEndDate()),
+                entity.getCycleStartDate(),
+                entity.getCycleEndDate(),
                 entity.getSalaryReceivedDate(),
                 entity.isClosed(),
                 entity.getNotes(),

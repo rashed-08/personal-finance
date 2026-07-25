@@ -58,6 +58,7 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
         useState<AdjustmentDirection>("decrease");
     const [adjustmentAccountId, setAdjustmentAccountId] = useState("");
     const [migrationBatchId, setMigrationBatchId] = useState("");
+    const [startsNewSalaryCycle, setStartsNewSalaryCycle] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -75,6 +76,7 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
             setAdjustmentDirection("decrease");
             setAdjustmentAccountId("");
             setMigrationBatchId("");
+            setStartsNewSalaryCycle(false);
             setFormError(null);
             return;
         }
@@ -186,7 +188,8 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
                 setFormError("Category is required.");
                 return;
             }
-            if (shape.needsSalaryCycle && !salaryCycleId) {
+            const skipsSalaryCycle = transactionType === "INCOME" && startsNewSalaryCycle;
+            if (shape.needsSalaryCycle && !skipsSalaryCycle && !salaryCycleId) {
                 setFormError("Salary cycle is required.");
                 return;
             }
@@ -198,7 +201,13 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
             if (shape.needsFromAccount) request.fromAccountId = fromAccountId;
             if (shape.needsToAccount) request.toAccountId = toAccountId;
             if (shape.needsCategory) request.categoryId = categoryId;
-            if (shape.needsSalaryCycle) request.salaryCycleId = salaryCycleId;
+            if (shape.needsSalaryCycle) {
+                if (skipsSalaryCycle) {
+                    request.startsNewSalaryCycle = true;
+                } else {
+                    request.salaryCycleId = salaryCycleId;
+                }
+            }
             if (transactionType === "MIGRATION") {
                 request.migrationBatchId = migrationBatchId.trim();
             }
@@ -434,13 +443,26 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
                 </div>
             )}
 
-            {!isEditing && shape.needsSalaryCycle && (
-                <SalaryCycleSelect
-                    id="txn-salary-cycle"
-                    value={salaryCycleId}
-                    onChange={setSalaryCycleId}
-                />
+            {!isEditing && transactionType === "INCOME" && (
+                <label className="field-checkbox">
+                    <input
+                        type="checkbox"
+                        checked={startsNewSalaryCycle}
+                        onChange={(e) => setStartsNewSalaryCycle(e.target.checked)}
+                    />
+                    This is a new salary payment — start a new salary cycle
+                </label>
             )}
+
+            {!isEditing &&
+                shape.needsSalaryCycle &&
+                !(transactionType === "INCOME" && startsNewSalaryCycle) && (
+                    <SalaryCycleSelect
+                        id="txn-salary-cycle"
+                        value={salaryCycleId}
+                        onChange={setSalaryCycleId}
+                    />
+                )}
 
             <div className="field">
                 <label className="field__label" htmlFor="txn-description">
