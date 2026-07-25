@@ -59,7 +59,7 @@ public class GetLoanReportService {
     private LoanReportLine toLine(Loan loan) {
 
         TransactionFilter filter = new TransactionFilter(
-                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, null, loan.getId());
+                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, null, loan.getId(), null);
 
         List<LoanPaymentHistoryLine> paymentHistory = new ArrayList<>();
 

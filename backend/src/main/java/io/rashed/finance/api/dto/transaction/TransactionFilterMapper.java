@@ -50,7 +50,9 @@ public final class TransactionFilterMapper {
 
                 request.loanId() == null
                         ? null
-                        : LoanId.of(request.loanId())
+                        : LoanId.of(request.loanId()),
+
+                null
         );
     }
 }

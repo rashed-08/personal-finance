@@ -34,7 +34,7 @@ public class GetCashFlowReportService {
     private Money sumByType(TransactionType type, LocalDate fromDate, LocalDate toDate) {
 
         TransactionFilter filter = new TransactionFilter(
-                fromDate, toDate, type, TransactionStatus.POSTED, null, null, null, null, null);
+                fromDate, toDate, type, TransactionStatus.POSTED, null, null, null, null, null, null);
 
         Money total = Money.zero();
 

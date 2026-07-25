@@ -38,7 +38,7 @@ export default function MainLayout() {
                         className={({ isActive }) =>
                             isActive ? "nav__item nav__item--active" : "nav__item"
                         } >
-                        Accounts
+                        🏦 Accounts
                     </NavLink>
 
                     <NavLink
@@ -95,6 +95,16 @@ export default function MainLayout() {
                             isActive ? "nav__item nav__item--active" : "nav__item"
                         } >
                         🔁 Recurring
+                    </NavLink>
+
+                    <div className="nav__label">Data</div>
+
+                    <NavLink
+                        to="/import"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        📥 Import
                     </NavLink>
                 </nav>
             </aside>

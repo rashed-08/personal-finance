@@ -118,6 +118,25 @@ public final class Transaction {
             null, categoryId, salaryCycleId, null, null, null, null, null, null, null, now, now);
     }
 
+    /**
+     * An expense backfilled from a legacy source (e.g. Google Keep, CSV).
+     * Behaves exactly like {@link #expense}, tagged with a migration batch
+     * id for later auditing/rollback, per docs/database/tables/transactions/02-transaction-types.md.
+     */
+    public static Transaction importedExpense(TransactionId id, LocalDate transactionDate, Money amount,
+        AccountId fromAccountId, CategoryId categoryId, SalaryCycleId salaryCycleId, String description, String notes, String migrationBatchId) {
+
+        validateAmount(amount);
+        validateExpense(fromAccountId, categoryId);
+        Objects.requireNonNull(migrationBatchId, "Imported expense requires a migration batch id.");
+        if (migrationBatchId.isBlank()) {
+            throw new IllegalArgumentException("Migration batch id cannot be blank.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        return new Transaction(id, TransactionType.EXPENSE, TransactionStatus.POSTED, transactionDate, amount, description, notes, fromAccountId,
+            null, categoryId, salaryCycleId, null, migrationBatchId, null, null, null, null, null, now, now);
+    }
+
     public static Transaction income(TransactionId id, LocalDate transactionDate, Money amount,
         AccountId toAccountId, CategoryId categoryId, SalaryCycleId salaryCycleId, String description) {
 

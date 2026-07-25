@@ -161,6 +161,20 @@ public final class TransactionSpecification {
 
 
 
+            if (filter.migrationBatchId() != null) {
+
+                predicates =
+                        cb.and(
+                                predicates,
+                                cb.equal(
+                                        root.get("migrationBatchId"),
+                                        filter.migrationBatchId()
+                                )
+                        );
+            }
+
+
+
             return predicates;
         };
     }

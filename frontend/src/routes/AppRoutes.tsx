@@ -11,6 +11,7 @@ import CashReconciliationPage from "../app/cash-reconciliation/page";
 import FundsPage from "../app/funds/page";
 import LoansPage from "../app/loans/page";
 import RecurringTransactionsPage from "../app/recurring-transactions/page";
+import ImportPage from "../app/import/page";
 
 export default function AppRoutes() {
     return (
@@ -69,6 +70,11 @@ export default function AppRoutes() {
                 <Route
                     path="recurring-transactions"
                     element={<RecurringTransactionsPage />}
+                />
+
+                <Route
+                    path="import"
+                    element={<ImportPage />}
                 />
 
             </Route>

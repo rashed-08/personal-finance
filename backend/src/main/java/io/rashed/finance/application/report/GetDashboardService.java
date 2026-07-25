@@ -137,7 +137,7 @@ public class GetDashboardService {
     private Money sumByType(TransactionType type, LocalDate fromDate, LocalDate toDate) {
 
         TransactionFilter filter = new TransactionFilter(
-                fromDate, toDate, type, TransactionStatus.POSTED, null, null, null, null, null);
+                fromDate, toDate, type, TransactionStatus.POSTED, null, null, null, null, null, null);
 
         Money total = Money.zero();
 
@@ -151,7 +151,7 @@ public class GetDashboardService {
     private List<Transaction> recentTransactions() {
 
         TransactionFilter filter = new TransactionFilter(
-                null, null, null, TransactionStatus.POSTED, null, null, null, null, null);
+                null, null, null, TransactionStatus.POSTED, null, null, null, null, null, null);
 
         Pageable pageable = PageRequest.of(0, RECENT_TRANSACTIONS_LIMIT, Sort.by(Sort.Direction.DESC, "transactionDate"));
 
@@ -161,7 +161,7 @@ public class GetDashboardService {
     private List<CategorySpending> topSpendingCategories(LocalDate fromDate, LocalDate toDate) {
 
         TransactionFilter filter = new TransactionFilter(
-                fromDate, toDate, TransactionType.EXPENSE, TransactionStatus.POSTED, null, null, null, null, null);
+                fromDate, toDate, TransactionType.EXPENSE, TransactionStatus.POSTED, null, null, null, null, null, null);
 
         Map<CategoryId, Money> totals = new LinkedHashMap<>();
 

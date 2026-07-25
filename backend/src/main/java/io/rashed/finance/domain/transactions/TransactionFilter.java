@@ -28,7 +28,9 @@ public record TransactionFilter(
 
         FundId fundId,
 
-        LoanId loanId
+        LoanId loanId,
+
+        String migrationBatchId
 
 ) {
 }

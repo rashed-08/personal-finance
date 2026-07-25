@@ -60,7 +60,7 @@ public class GetFundReportService {
     private FundReportLine toLine(Fund fund) {
 
         TransactionFilter filter = new TransactionFilter(
-                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, fund.getId(), null);
+                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, fund.getId(), null, null);
 
         Money allocated = Money.zero();
         Money used = Money.zero();

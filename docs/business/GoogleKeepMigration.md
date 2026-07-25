@@ -2,7 +2,7 @@
 
 Version: 1.0
 
-Status: Draft
+Status: Implemented (v1, Issue #14)
 
 Owner: Personal Finance App
 
@@ -487,6 +487,17 @@ Salary Cycle
 April 2026
 
 ---
+
+# Implementation Notes (v1)
+
+The implemented v1 deviates from a few points above, based on direct user decisions during Issue #14:
+
+- **Priority is accurate amounts, not category fidelity.** Category detection is best-effort against a small synonym map of already-known labels to existing categories (see `V2__seed_data.sql`); anything unmatched falls back to "Other Expense" silently — no manual-review flag, no blocking validation. Real category labels turned out to be personal (person names, place names, one-off purchases) rather than a fixed vocabulary, so forcing a taxonomy wasn't the goal.
+- **Fund and Loan keyword detection was dropped.** Every imported line becomes a plain `EXPENSE` transaction. This simplification was chosen deliberately over the Fund/Loan auto-detection described above.
+- **No account is inferred from the notes** (they never name one). All imported transactions post against a dedicated `Legacy Import` cash account, created automatically on first use, keeping guessed historical data isolated from real account balances while still fully participating in Dashboard/Reports totals and graphs.
+- **Salary cycles are calendar months** (1st to end of month) rather than a real salary-day boundary, since no salary cycle existed before this application. Real salary-day cycles take over naturally once ordinary transactions begin recording after import.
+- **Single-shot import, no preview/confirm step.** `POST /api/migrations/google-keep` parses and commits in one call, returning the result summary directly — see `docs/api/Import.md`.
+- **Imported transactions use `EXPENSE` type + `migration_batch_id`**, not the narrow existing `MIGRATION` transaction type (see AR-020 in `docs/review/ArchitectureReview.md`), per `02-transaction-types.md`'s own rule that imported transactions behave exactly like manually created ones.
 
 # Final Statement
 

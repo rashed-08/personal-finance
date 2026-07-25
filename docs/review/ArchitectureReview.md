@@ -395,13 +395,17 @@ Migration Batch Tracking
 
 Status
 
-PROPOSED
+IMPLEMENTED
 
 Reason
 
 Imported transactions should optionally reference a migration batch.
 
 This enables rollback, auditing and future imports from Google Keep, CSV or bank statements.
+
+Implementation note (Issue #14, Google Keep Migration phase)
+
+`migration_batch_id` already existed on `transactions` (added for the narrow, account-crediting `MIGRATION` transaction type). It is now also set on ordinary `EXPENSE` transactions created by `Transaction.importedExpense(...)`, per `02-transaction-types.md`'s own rule that imported transactions "behave exactly like manually created transactions" — the batch id is the only differentiator, not a separate transaction type. `TransactionFilter` now exposes `migrationBatchId` so a batch can be queried (and, in a future phase, rolled back) via the normal transaction repository.
 
 ---
 
