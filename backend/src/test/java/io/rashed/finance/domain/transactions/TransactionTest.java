@@ -457,6 +457,41 @@ class TransactionTest {
         assertTrue(adjustment.hasReferenceTransaction());
     }
 
+    // -------------------------------------------------------------------------
+    // signedAmountFor
+    // -------------------------------------------------------------------------
+
+    @Test
+    void signedAmountFor_isPositiveWhenAccountReceivesMoney() {
+
+        Transaction income = Transaction.income(
+                TransactionId.newId(), today, Money.of(500), account, category, salaryCycle, null);
+
+        assertEquals(Money.of(500), income.signedAmountFor(account));
+    }
+
+    @Test
+    void signedAmountFor_isNegativeWhenAccountLosesMoney() {
+
+        assertEquals(Money.of(-500), anExpense().signedAmountFor(account));
+    }
+
+    @Test
+    void signedAmountFor_handlesBothSidesOfATransfer() {
+
+        Transaction transfer = Transaction.transfer(
+                TransactionId.newId(), today, Money.of(1000), account, otherAccount, salaryCycle, null);
+
+        assertEquals(Money.of(-1000), transfer.signedAmountFor(account));
+        assertEquals(Money.of(1000), transfer.signedAmountFor(otherAccount));
+    }
+
+    @Test
+    void signedAmountFor_rejectsUnrelatedAccount() {
+
+        assertThrows(IllegalArgumentException.class, () -> anExpense().signedAmountFor(AccountId.newId()));
+    }
+
     private Transaction anExpense() {
 
         return Transaction.expense(

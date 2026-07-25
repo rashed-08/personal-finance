@@ -48,6 +48,14 @@ export default function MainLayout() {
                     </NavLink>
 
                     <NavLink
+                        to="/cash-reconciliation"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        💵 Cash Reconciliation
+                    </NavLink>
+
+                    <NavLink
                         to="/funds"
                         className={({ isActive }) =>
                             isActive ? "nav__item nav__item--active" : "nav__item"
