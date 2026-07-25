@@ -149,6 +149,8 @@ public class ImportGoogleKeepDataService {
             }
         }
 
+        deactivateLegacyImportAccount(account);
+
         long durationMillis = System.currentTimeMillis() - startMillis;
 
         return new GoogleKeepMigrationResult(imported, skipped, List.copyOf(warnings), List.copyOf(errors), durationMillis);
@@ -159,6 +161,20 @@ public class ImportGoogleKeepDataService {
         return accountRepository.findByName(LEGACY_IMPORT_ACCOUNT_NAME)
                 .orElseGet(() -> accountRepository.save(
                         Account.createCashAccount(LEGACY_IMPORT_ACCOUNT_NAME, Money.zero())));
+    }
+
+    /**
+     * The account has no offsetting income — only ever debited by imported
+     * expenses — so its derived balance is meaningless and, left active,
+     * would distort Total Balance / Cash Balance (which sum active accounts
+     * only). Deactivating it removes that distortion without affecting any
+     * date/category-based report, none of which filter by account status.
+     */
+    private void deactivateLegacyImportAccount(Account account) {
+
+        if (account.isActive()) {
+            accountRepository.save(account.deactivate());
+        }
     }
 
     private SalaryCycle getOrCreateSalaryCycle(YearMonth yearMonth) {
