@@ -16,7 +16,8 @@ Each migration is immutable once it has been executed in a shared environment.
 | V4 | Seed default funds |
 | V5 | Make transactions.salary_cycle_id optional for adjustment/opening balance/migration |
 | V6 | Add missing transactions.reference_transaction_id column |
-| V7+ | Future schema changes |
+| V7 | Fix migration_batch_id/reconciliation_batch_id column types (UUID -> VARCHAR) |
+| V8+ | Future schema changes |
 
 ---
 
