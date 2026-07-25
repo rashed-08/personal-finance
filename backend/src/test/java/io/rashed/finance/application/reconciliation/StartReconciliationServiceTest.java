@@ -1,7 +1,6 @@
 package io.rashed.finance.application.reconciliation;
 
 import io.rashed.finance.application.account.CalculateAccountBalanceService;
-import io.rashed.finance.common.enums.AccountType;
 import io.rashed.finance.common.exception.ResourceNotFoundException;
 import io.rashed.finance.common.exception.TransactionValidationException;
 import io.rashed.finance.common.valueobject.Money;
