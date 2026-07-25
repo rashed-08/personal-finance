@@ -68,6 +68,8 @@ public class SalaryCycleRepositoryImpl implements SalaryCycleRepository {
     public Optional<SalaryCycle> findPrevious(LocalDate beforeStartDate) {
 
         return jpaRepository.findPrevious(beforeStartDate, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
                 .map(SalaryCycleEntityMapper::toDomain);
     }
 

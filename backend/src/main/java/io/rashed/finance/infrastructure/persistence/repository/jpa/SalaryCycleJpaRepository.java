@@ -3,6 +3,7 @@ package io.rashed.finance.infrastructure.persistence.repository.jpa;
 import io.rashed.finance.infrastructure.persistence.entity.SalaryCycleEntity;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,5 +33,5 @@ public interface SalaryCycleJpaRepository extends JpaRepository<SalaryCycleEntit
             WHERE c.cycleStartDate < :startDate
             ORDER BY c.cycleStartDate DESC
             """)
-    Optional<SalaryCycleEntity> findPrevious(LocalDate startDate, Pageable limit);
+    List<SalaryCycleEntity> findPrevious(LocalDate startDate, Pageable limit);
 }
