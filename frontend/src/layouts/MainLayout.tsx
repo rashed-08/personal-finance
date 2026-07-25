@@ -13,6 +13,24 @@ export default function MainLayout() {
                 </div>
 
                 <nav className="nav">
+                    <div className="nav__label">Overview</div>
+
+                    <NavLink
+                        to="/dashboard"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        📊 Dashboard
+                    </NavLink>
+
+                    <NavLink
+                        to="/reports"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        📈 Reports
+                    </NavLink>
+
                     <div className="nav__label">Manage</div>
 
                     <NavLink

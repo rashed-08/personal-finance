@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
+import DashboardPage from "../app/dashboard/page";
+import ReportsPage from "../app/reports/page";
 import AccountsPage from "../app/accounts/page";
 import CategoriesPage from "../app/categories/page";
 import TransactionsPage from "../app/transactions/page";
@@ -16,7 +18,17 @@ export default function AppRoutes() {
             <Route path="/" element={<MainLayout />}>
                 <Route
                     index
-                    element={<Navigate to="/accounts" replace />}
+                    element={<Navigate to="/dashboard" replace />}
+                />
+
+                <Route
+                    path="dashboard"
+                    element={<DashboardPage />}
+                />
+
+                <Route
+                    path="reports"
+                    element={<ReportsPage />}
                 />
 
                 <Route
