@@ -50,13 +50,15 @@ public final class Transaction {
 
     private final AdjustmentReason adjustmentReason;
 
+    private final TransactionId referenceTransactionId;
+
     private final LocalDateTime createdAt;
 
     private final LocalDateTime updatedAt;
 
     public Transaction(TransactionId id, TransactionType transactionType, TransactionStatus transactionStatus, LocalDate transactionDate, Money amount, String description,
             String notes, AccountId fromAccountId, AccountId toAccountId, CategoryId categoryId, SalaryCycleId salaryCycleId, String referenceNumber, String migrationBatchId,
-            String reconciliationBatchId, AdjustmentReason adjustmentReason, LocalDateTime createdAt, LocalDateTime updatedAt) {
+            String reconciliationBatchId, AdjustmentReason adjustmentReason, TransactionId referenceTransactionId, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = Objects.requireNonNull(id);
         this.transactionType = Objects.requireNonNull(transactionType);
         this.transactionStatus = Objects.requireNonNull(transactionStatus);
@@ -74,6 +76,7 @@ public final class Transaction {
         this.referenceNumber = referenceNumber;
         this.migrationBatchId = migrationBatchId;
         this.reconciliationBatchId = reconciliationBatchId;
+        this.referenceTransactionId = referenceTransactionId;
         this.adjustmentReason = adjustmentReason;
 
         this.createdAt = Objects.requireNonNull(createdAt);
@@ -91,7 +94,7 @@ public final class Transaction {
         validateExpense(fromAccountId, categoryId);
         LocalDateTime now = LocalDateTime.now();
         return new Transaction(id, TransactionType.EXPENSE, TransactionStatus.POSTED, transactionDate, amount, description, null,fromAccountId, 
-            null, categoryId, salaryCycleId, null, null, null, null, now, now);
+            null, categoryId, salaryCycleId, null, null, null, null, null, now, now);
     }
 
     public static Transaction income(TransactionId id, LocalDate transactionDate, Money amount, 
@@ -101,7 +104,7 @@ public final class Transaction {
         validateIncome(toAccountId, categoryId);
         LocalDateTime now = LocalDateTime.now();
         return new Transaction(id, TransactionType.INCOME, TransactionStatus.POSTED, transactionDate, amount, description, null, null, toAccountId,
-            categoryId, salaryCycleId, null, null, null, null, now, now);
+            categoryId, salaryCycleId, null, null, null, null, null, now, now);
 
     }
 
@@ -112,23 +115,61 @@ public final class Transaction {
         validateTransfer(fromAccountId, toAccountId);
         LocalDateTime now = LocalDateTime.now();
         return new Transaction(id, TransactionType.TRANSFER, TransactionStatus.POSTED, transactionDate, amount, description, null, fromAccountId,
-            toAccountId, null, salaryCycleId, null, null, null, null, now, now);
+            toAccountId, null, salaryCycleId, null, null, null, null, null, now, now);
     }
 
-    public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId accountId, AdjustmentReason adjustmentReason, String description) {
+    public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId accountId, TransactionId referenceTransactionId, AdjustmentReason adjustmentReason, String description) {
         validateAmount(amount);
         validateAdjustment(accountId, adjustmentReason);
         LocalDateTime now = LocalDateTime.now();
-        return new Transaction(id, TransactionType.ADJUSTMENT, TransactionStatus.POSTED, transactionDate, amount, description, null, accountId,
-            null, null, null, null, null, null, adjustmentReason, now, now);
+
+        return new Transaction(
+                id,
+                TransactionType.ADJUSTMENT,
+                TransactionStatus.POSTED,
+                transactionDate,
+                amount,
+                description,
+                null,
+                accountId,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                adjustmentReason,
+                referenceTransactionId,
+                now,
+                now
+        );
     }
 
     public static Transaction openingBalance(TransactionId id, LocalDate transactionDate, Money amount, AccountId accountId) {
         validateAmount(amount);
         validateOpeningBalance(accountId);
         LocalDateTime now = LocalDateTime.now();
-        return new Transaction(id, TransactionType.OPENING_BALANCE, TransactionStatus.POSTED, transactionDate, amount, "Opening Balance", null,
-            null, accountId, null, null, null, null, null, AdjustmentReason.OPENING_BALANCE, now, now);
+
+                return new Transaction(
+                id,
+                TransactionType.OPENING_BALANCE,
+                TransactionStatus.POSTED,
+                transactionDate,
+                amount,
+                "Opening Balance",
+                null,
+                null,
+                accountId,
+                null,
+                null,
+                null,
+                null,
+                null,
+                AdjustmentReason.OPENING_BALANCE,
+                null,
+                now,
+                now
+        );
     }
 
     public static Transaction migration(TransactionId id, LocalDate transactionDate, Money amount, AccountId accountId, String migrationBatchId, String description) {
@@ -136,8 +177,27 @@ public final class Transaction {
         validateAmount(amount);
         validateMigration(accountId, migrationBatchId);
         LocalDateTime now = LocalDateTime.now();
-        return new Transaction(id, TransactionType.MIGRATION, TransactionStatus.POSTED, transactionDate, amount, description, null, null, accountId,
-            null, null, null, migrationBatchId, null, AdjustmentReason.DATA_MIGRATION, now, now);
+
+        return new Transaction(
+                id,
+                TransactionType.MIGRATION,
+                TransactionStatus.POSTED,
+                transactionDate,
+                amount,
+                description,
+                null,
+                null,
+                accountId,
+                null,
+                null,
+                null,
+                migrationBatchId,
+                null,
+                AdjustmentReason.DATA_MIGRATION,
+                null,
+                now,
+                now
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -265,7 +325,7 @@ public final class Transaction {
         }
 
         return new Transaction(id, transactionType, TransactionStatus.POSTED, transactionDate, amount, description, notes, fromAccountId, toAccountId,
-                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, createdAt, LocalDateTime.now());
+                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, createdAt, LocalDateTime.now());
     }
 
     public Transaction voidTransaction() {
@@ -278,8 +338,26 @@ public final class Transaction {
             throw new IllegalStateException("A reversed transaction cannot be voided.");
         }
 
-        return new Transaction(id, transactionType, TransactionStatus.VOID, transactionDate, amount, description, notes, fromAccountId, toAccountId,
-                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, createdAt, LocalDateTime.now());
+        return new Transaction(
+                id,
+                transactionType,
+                TransactionStatus.VOID,
+                transactionDate,
+                amount,
+                description,
+                notes,
+                fromAccountId,
+                toAccountId,
+                categoryId,
+                salaryCycleId,
+                referenceNumber,
+                migrationBatchId,
+                reconciliationBatchId,
+                adjustmentReason,
+                referenceTransactionId,
+                createdAt,
+                LocalDateTime.now()
+        );
     }
 
     public Transaction reverse() {
@@ -293,6 +371,16 @@ public final class Transaction {
         }
 
         return new Transaction(id, transactionType, TransactionStatus.REVERSED, transactionDate, amount, description, notes, fromAccountId,
-                toAccountId, categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, createdAt, LocalDateTime.now());
+                toAccountId, categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, createdAt, LocalDateTime.now());
+    }
+
+    public boolean isAdjustmentFor(TransactionId id) {
+
+        return referenceTransactionId != null && referenceTransactionId.equals(id);
+    }
+
+    public boolean hasReferenceTransaction(){
+
+        return referenceTransactionId != null;
     }
 }

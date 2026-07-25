@@ -2,10 +2,13 @@ package io.rashed.finance.application.transaction;
 
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
+
 import io.rashed.finance.domain.transactions.Transaction;
 import io.rashed.finance.domain.transactions.TransactionId;
 import io.rashed.finance.domain.transactions.TransactionRepository;
 
+@Service
 public class CreateTransactionService {
 
     private final TransactionRepository transactionRepository;
@@ -55,6 +58,7 @@ public class CreateTransactionService {
                     command.transactionDate(),
                     command.amount(),
                     command.fromAccountId(),
+                    command.reconciliationBatchId(),
                     command.adjustmentReason(),
                     command.description()
             );
