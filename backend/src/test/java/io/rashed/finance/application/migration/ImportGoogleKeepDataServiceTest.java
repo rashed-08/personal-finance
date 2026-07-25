@@ -71,14 +71,42 @@ class ImportGoogleKeepDataServiceTest {
         service.execute("01-26\n=========\n\nGas 1850\n\n=1850\n");
 
         verify(accountRepository).save(argThat(account -> account.getName().equals("Legacy Import")
-                && account.getAccountType() == AccountType.CASH));
+                && account.getAccountType() == AccountType.CASH
+                && account.isActive()));
     }
 
     @Test
-    void execute_reusesExistingLegacyImportAccount() {
+    void execute_reusesExistingLegacyImportAccountRatherThanCreatingANewOne() {
 
         Account existing = Account.createCashAccount("Legacy Import", Money.zero());
         when(accountRepository.findByName("Legacy Import")).thenReturn(Optional.of(existing));
+        when(accountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        givenNoExistingSalaryCycles();
+
+        service.execute("01-26\n=========\n\nGas 1850\n\n=1850\n");
+
+        // Only save() call on the account should be the end-of-run deactivation of the SAME account, never a fresh create.
+        verify(accountRepository, times(1)).save(argThat(a -> a.getId().equals(existing.getId())));
+    }
+
+    @Test
+    void execute_deactivatesLegacyImportAccountAfterImport() {
+
+        Account existing = Account.createCashAccount("Legacy Import", Money.zero());
+        when(accountRepository.findByName("Legacy Import")).thenReturn(Optional.of(existing));
+        when(accountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        givenNoExistingSalaryCycles();
+
+        service.execute("01-26\n=========\n\nGas 1850\n\n=1850\n");
+
+        verify(accountRepository).save(argThat(account -> account.getId().equals(existing.getId()) && !account.isActive()));
+    }
+
+    @Test
+    void execute_doesNotRedundantlySaveAnAlreadyDeactivatedAccount() {
+
+        Account alreadyInactive = Account.createCashAccount("Legacy Import", Money.zero()).deactivate();
+        when(accountRepository.findByName("Legacy Import")).thenReturn(Optional.of(alreadyInactive));
         givenNoExistingSalaryCycles();
 
         service.execute("01-26\n=========\n\nGas 1850\n\n=1850\n");
