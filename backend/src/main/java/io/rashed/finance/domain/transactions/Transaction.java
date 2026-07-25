@@ -6,6 +6,7 @@ import io.rashed.finance.common.enums.TransactionType;
 import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
+import io.rashed.finance.domain.funds.FundId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -52,13 +53,21 @@ public final class Transaction {
 
     private final TransactionId referenceTransactionId;
 
+    /**
+     * Set only for a TRANSFER representing a fund allocation or withdrawal:
+     * exactly one of fromAccountId/toAccountId is set (the real account
+     * side), and this identifies the fund on the other side. Null for
+     * every other transaction.
+     */
+    private final FundId fundId;
+
     private final LocalDateTime createdAt;
 
     private final LocalDateTime updatedAt;
 
     public Transaction(TransactionId id, TransactionType transactionType, TransactionStatus transactionStatus, LocalDate transactionDate, Money amount, String description,
             String notes, AccountId fromAccountId, AccountId toAccountId, CategoryId categoryId, SalaryCycleId salaryCycleId, String referenceNumber, String migrationBatchId,
-            String reconciliationBatchId, AdjustmentReason adjustmentReason, TransactionId referenceTransactionId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+            String reconciliationBatchId, AdjustmentReason adjustmentReason, TransactionId referenceTransactionId, FundId fundId, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = Objects.requireNonNull(id);
         this.transactionType = Objects.requireNonNull(transactionType);
         this.transactionStatus = Objects.requireNonNull(transactionStatus);
@@ -78,6 +87,7 @@ public final class Transaction {
         this.reconciliationBatchId = reconciliationBatchId;
         this.referenceTransactionId = referenceTransactionId;
         this.adjustmentReason = adjustmentReason;
+        this.fundId = fundId;
 
         this.createdAt = Objects.requireNonNull(createdAt);
         this.updatedAt = Objects.requireNonNull(updatedAt);
@@ -87,35 +97,56 @@ public final class Transaction {
     // Factory Methods
     // -------------------------------------------------------------------------
 
-    public static Transaction expense(TransactionId id, LocalDate transactionDate, Money amount, 
+    public static Transaction expense(TransactionId id, LocalDate transactionDate, Money amount,
         AccountId fromAccountId, CategoryId categoryId, SalaryCycleId salaryCycleId, String description) {
 
         validateAmount(amount);
         validateExpense(fromAccountId, categoryId);
         LocalDateTime now = LocalDateTime.now();
-        return new Transaction(id, TransactionType.EXPENSE, TransactionStatus.POSTED, transactionDate, amount, description, null,fromAccountId, 
-            null, categoryId, salaryCycleId, null, null, null, null, null, now, now);
+        return new Transaction(id, TransactionType.EXPENSE, TransactionStatus.POSTED, transactionDate, amount, description, null,fromAccountId,
+            null, categoryId, salaryCycleId, null, null, null, null, null, null, now, now);
     }
 
-    public static Transaction income(TransactionId id, LocalDate transactionDate, Money amount, 
+    public static Transaction income(TransactionId id, LocalDate transactionDate, Money amount,
         AccountId toAccountId, CategoryId categoryId, SalaryCycleId salaryCycleId, String description) {
 
         validateAmount(amount);
         validateIncome(toAccountId, categoryId);
         LocalDateTime now = LocalDateTime.now();
         return new Transaction(id, TransactionType.INCOME, TransactionStatus.POSTED, transactionDate, amount, description, null, null, toAccountId,
-            categoryId, salaryCycleId, null, null, null, null, null, now, now);
+            categoryId, salaryCycleId, null, null, null, null, null, null, now, now);
 
     }
 
-    public static Transaction transfer(TransactionId id, LocalDate transactionDate, Money amount, 
+    /** Ordinary account-to-account transfer. Use {@link #fundTransfer} for fund allocation/withdrawal. */
+    public static Transaction transfer(TransactionId id, LocalDate transactionDate, Money amount,
         AccountId fromAccountId, AccountId toAccountId, SalaryCycleId salaryCycleId, String description) {
 
         validateAmount(amount);
-        validateTransfer(fromAccountId, toAccountId);
+        validateTransfer(fromAccountId, toAccountId, null);
         LocalDateTime now = LocalDateTime.now();
         return new Transaction(id, TransactionType.TRANSFER, TransactionStatus.POSTED, transactionDate, amount, description, null, fromAccountId,
-            toAccountId, null, salaryCycleId, null, null, null, null, null, now, now);
+            toAccountId, null, salaryCycleId, null, null, null, null, null, null, now, now);
+    }
+
+    /**
+     * A fund allocation or withdrawal. Exactly one of fromAccountId/toAccountId
+     * must be set — the real account on one side, the fund implicitly on the
+     * other:
+     * <ul>
+     *   <li>Allocation (account -&gt; fund): pass fromAccountId, leave toAccountId null.</li>
+     *   <li>Withdrawal (fund -&gt; account): pass toAccountId, leave fromAccountId null.</li>
+     * </ul>
+     */
+    public static Transaction fundTransfer(TransactionId id, LocalDate transactionDate, Money amount,
+        AccountId fromAccountId, AccountId toAccountId, FundId fundId, SalaryCycleId salaryCycleId, String description) {
+
+        validateAmount(amount);
+        Objects.requireNonNull(fundId, "Fund transfer requires a fund.");
+        validateTransfer(fromAccountId, toAccountId, fundId);
+        LocalDateTime now = LocalDateTime.now();
+        return new Transaction(id, TransactionType.TRANSFER, TransactionStatus.POSTED, transactionDate, amount, description, null, fromAccountId,
+            toAccountId, null, salaryCycleId, null, null, null, null, null, fundId, now, now);
     }
 
     public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId fromAccountId, AccountId toAccountId, TransactionId referenceTransactionId, AdjustmentReason adjustmentReason, String description, String notes) {
@@ -140,6 +171,7 @@ public final class Transaction {
                 null,
                 adjustmentReason,
                 referenceTransactionId,
+                null,
                 now,
                 now
         );
@@ -166,6 +198,7 @@ public final class Transaction {
                 null,
                 null,
                 AdjustmentReason.OPENING_BALANCE,
+                null,
                 null,
                 now,
                 now
@@ -194,6 +227,7 @@ public final class Transaction {
                 migrationBatchId,
                 null,
                 AdjustmentReason.DATA_MIGRATION,
+                null,
                 null,
                 now,
                 now
@@ -226,7 +260,17 @@ public final class Transaction {
         Objects.requireNonNull(categoryId, "Income requires a category.");
     }
 
-    private static void validateTransfer(AccountId fromAccountId, AccountId toAccountId) {
+    private static void validateTransfer(AccountId fromAccountId, AccountId toAccountId, FundId fundId) {
+
+        if (fundId != null) {
+
+            if ((fromAccountId == null) == (toAccountId == null)) {
+                throw new IllegalArgumentException(
+                        "A fund transfer requires exactly one of fromAccountId or toAccountId.");
+            }
+
+            return;
+        }
 
         Objects.requireNonNull(fromAccountId, "Transfer requires a source account.");
 
@@ -325,6 +369,10 @@ public final class Transaction {
         return toAccountId != null;
     }
 
+    public boolean hasFund() {
+        return fundId != null;
+    }
+
     public Transaction withDetails(CategoryId categoryId, String description, String notes) {
 
         if ((isExpense() || isIncome()) && categoryId == null) {
@@ -333,7 +381,7 @@ public final class Transaction {
         }
 
         return new Transaction(id, transactionType, transactionStatus, transactionDate, amount, description, notes, fromAccountId, toAccountId,
-                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, createdAt, LocalDateTime.now());
+                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, fundId, createdAt, LocalDateTime.now());
     }
 
     public Transaction post() {
@@ -343,7 +391,7 @@ public final class Transaction {
         }
 
         return new Transaction(id, transactionType, TransactionStatus.POSTED, transactionDate, amount, description, notes, fromAccountId, toAccountId,
-                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, createdAt, LocalDateTime.now());
+                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, fundId, createdAt, LocalDateTime.now());
     }
 
     public Transaction voidTransaction() {
@@ -373,6 +421,7 @@ public final class Transaction {
                 reconciliationBatchId,
                 adjustmentReason,
                 referenceTransactionId,
+                fundId,
                 createdAt,
                 LocalDateTime.now()
         );
@@ -389,7 +438,7 @@ public final class Transaction {
         }
 
         return new Transaction(id, transactionType, TransactionStatus.REVERSED, transactionDate, amount, description, notes, fromAccountId,
-                toAccountId, categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, createdAt, LocalDateTime.now());
+                toAccountId, categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, fundId, createdAt, LocalDateTime.now());
     }
 
     public boolean isAdjustmentFor(TransactionId id) {
@@ -464,5 +513,18 @@ public final class Transaction {
         }
 
         throw new IllegalArgumentException("Transaction does not involve this account.");
+    }
+
+    /**
+     * Whether this fund transfer increases (allocation) or decreases
+     * (withdrawal) the linked fund's reserved balance.
+     */
+    public boolean increasesFundBalance() {
+
+        if (!hasFund()) {
+            throw new IllegalStateException("Transaction is not linked to a fund.");
+        }
+
+        return toAccountId == null;
     }
 }

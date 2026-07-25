@@ -2,9 +2,12 @@ package io.rashed.finance.application.fund;
 
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
+
 import io.rashed.finance.domain.funds.Fund;
 import io.rashed.finance.domain.funds.FundRepository;
 
+@Service
 public class CreateFundService {
 
     private final FundRepository repository;
@@ -27,7 +30,7 @@ public class CreateFundService {
                 command.name(),
                 command.fundType(),
                 command.targetAmount(),
-                command.openingBalance(),
+                command.targetDate(),
                 command.description()
         );
 

@@ -6,6 +6,7 @@ import CategoriesPage from "../app/categories/page";
 import TransactionsPage from "../app/transactions/page";
 import SalaryCyclesPage from "../app/salary-cycles/page";
 import CashReconciliationPage from "../app/cash-reconciliation/page";
+import FundsPage from "../app/funds/page";
 
 export default function AppRoutes() {
     return (
@@ -39,6 +40,11 @@ export default function AppRoutes() {
                 <Route
                     path="cash-reconciliation"
                     element={<CashReconciliationPage />}
+                />
+
+                <Route
+                    path="funds"
+                    element={<FundsPage />}
                 />
 
             </Route>

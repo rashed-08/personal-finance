@@ -31,6 +31,8 @@ public record TransactionResponse(
 
         String referenceNumber,
 
+        UUID fundId,
+
         AdjustmentReason adjustmentReason,
 
         String description,

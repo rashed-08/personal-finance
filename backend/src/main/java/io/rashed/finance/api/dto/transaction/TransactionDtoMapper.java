@@ -5,6 +5,7 @@ import io.rashed.finance.application.transaction.UpdateTransactionCommand;
 import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
+import io.rashed.finance.domain.funds.FundId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.transactions.Transaction;
 import io.rashed.finance.domain.transactions.TransactionId;
@@ -32,6 +33,7 @@ public final class TransactionDtoMapper {
                 null,
                 request.adjustmentReason(),
                 request.referenceTransactionId() == null ? null : TransactionId.of(request.referenceTransactionId()),
+                request.fundId() == null ? null : FundId.of(request.fundId()),
                 request.startsNewSalaryCycle()
         );
     }
@@ -49,6 +51,7 @@ public final class TransactionDtoMapper {
                 transaction.getCategoryId() != null ? transaction.getCategoryId().getValue() : null,
                 transaction.getSalaryCycleId() != null ? transaction.getSalaryCycleId().getValue() : null,
                 transaction.getReferenceNumber(),
+                transaction.getFundId() != null ? transaction.getFundId().getValue() : null,
                 transaction.getAdjustmentReason(),
                 transaction.getDescription(),
                 transaction.getNotes(),

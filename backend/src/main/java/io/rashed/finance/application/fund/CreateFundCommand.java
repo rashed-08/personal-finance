@@ -3,6 +3,8 @@ package io.rashed.finance.application.fund;
 import io.rashed.finance.common.enums.FundType;
 import io.rashed.finance.common.valueobject.Money;
 
+import java.time.LocalDate;
+
 public record CreateFundCommand(
 
         String name,
@@ -11,7 +13,7 @@ public record CreateFundCommand(
 
         Money targetAmount,
 
-        Money openingBalance,
+        LocalDate targetDate,
 
         String description
 

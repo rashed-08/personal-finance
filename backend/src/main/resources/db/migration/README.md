@@ -10,16 +10,17 @@ Each migration is immutable once it has been executed in a shared environment.
 
 | Version | Description |
 |----------|-------------|
-| V1 | Initial database schema |
-| V2 | Seed default categories |
-| V3 | Default application settings |
-| V4 | Seed default funds |
-| V5 | Make transactions.salary_cycle_id optional for adjustment/opening balance/migration |
-| V6 | Add missing transactions.reference_transaction_id column |
-| V7 | Fix migration_batch_id/reconciliation_batch_id column types (UUID -> VARCHAR) |
-| V8 | Make salary_cycles.cycle_end_date optional (open-ended cycles) |
-| V9 | Redesign cash reconciliation as cash_reconciliations + cash_snapshots (drops unused cash table) |
-| V10+ | Future schema changes |
+| V1 | Initial database schema (all tables, constraints, triggers, indexes) |
+| V2 | Seed data (default categories, application settings, starter funds) |
+| V3+ | Future schema/data changes |
+
+Consolidated from a longer chain of incremental migrations (formerly V1–V10) while the project is still in
+development and every local database can be recreated from scratch. Schema fixes that were originally separate
+migrations (nullable `salary_cycles.cycle_end_date` and `transactions.salary_cycle_id`, `reference_transaction_id`,
+`migration_batch_id`/`reconciliation_batch_id` as VARCHAR, `fund_id` + its constraints, `funds.target_amount > 0`)
+are now folded directly into V1. Data seeding (categories, settings, funds) is now a single V2. This is safe only
+because no shared/production environment has these migrations applied yet — never do this once a migration has
+run anywhere outside local development.
 
 ---
 
@@ -37,8 +38,8 @@ Each migration is immutable once it has been executed in a shared environment.
 
 ```
 V1__initial_schema.sql
-V2__seed_default_categories.sql
-V3__default_settings.sql
+V2__seed_data.sql
+V3__add_recurring_transactions_index.sql
 ```
 
 Use:

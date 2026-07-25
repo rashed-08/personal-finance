@@ -6,9 +6,16 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * A logical reservation of money toward a purpose. A fund never owns money
+ * directly — its balance is always derived from allocation/withdrawal
+ * transactions, never stored here. See CalculateFundBalanceService and
+ * docs/database/tables/ funds.md ("Fund balances are never stored").
+ */
 @Getter
 @ToString
 @EqualsAndHashCode(of = "id")
@@ -28,14 +35,14 @@ public final class Fund {
     private final FundType fundType;
 
     /**
-     * Target amount (optional).
+     * Optional savings goal.
      */
     private final Money targetAmount;
 
     /**
-     * Current balance is calculated from ledger.
+     * Optional target completion date.
      */
-    private final Money openingBalance;
+    private final LocalDate targetDate;
 
     private final boolean active;
 
@@ -50,7 +57,7 @@ public final class Fund {
             String name,
             FundType fundType,
             Money targetAmount,
-            Money openingBalance,
+            LocalDate targetDate,
             boolean active,
             String description,
             LocalDateTime createdAt,
@@ -62,7 +69,7 @@ public final class Fund {
         this.fundType = Objects.requireNonNull(fundType);
 
         this.targetAmount = targetAmount;
-        this.openingBalance = Objects.requireNonNull(openingBalance);
+        this.targetDate = targetDate;
 
         this.active = active;
         this.description = description;
@@ -79,12 +86,11 @@ public final class Fund {
             String name,
             FundType fundType,
             Money targetAmount,
-            Money openingBalance,
+            LocalDate targetDate,
             String description
     ) {
 
         validateName(name);
-        validateOpeningBalance(openingBalance);
         validateTargetAmount(targetAmount);
         validateDescription(description);
 
@@ -95,7 +101,7 @@ public final class Fund {
                 name,
                 fundType,
                 targetAmount,
-                openingBalance,
+                targetDate,
                 true,
                 description,
                 now,
@@ -103,41 +109,16 @@ public final class Fund {
         );
     }
 
-    public static Fund emergencyFund(Money openingBalance) {
-
-        return create(
-                "Emergency Fund",
-                FundType.EMERGENCY,
-                null,
-                openingBalance,
-                null
-        );
+    public static Fund emergencyFund() {
+        return create("Emergency Fund", FundType.EMERGENCY, null, null, null);
     }
 
-    public static Fund zakatFund(Money openingBalance) {
-
-        return create(
-                "Zakat Fund",
-                FundType.ZAKAT,
-                null,
-                openingBalance,
-                null
-        );
+    public static Fund zakatFund() {
+        return create("Zakat Fund", FundType.ZAKAT, null, null, null);
     }
 
-    public static Fund savingsFund(
-            String name,
-            Money targetAmount,
-            Money openingBalance
-    ) {
-
-        return create(
-                name,
-                FundType.SAVINGS,
-                targetAmount,
-                openingBalance,
-                null
-        );
+    public static Fund savingsFund(String name, Money targetAmount, LocalDate targetDate) {
+        return create(name, FundType.SAVINGS, targetAmount, targetDate, null);
     }
 
     // -------------------------------------------------------------------------
@@ -146,53 +127,28 @@ public final class Fund {
 
     private static void validateName(String name) {
 
-        Objects.requireNonNull(
-                name,
-                "Fund name cannot be null."
-        );
+        Objects.requireNonNull(name, "Fund name cannot be null.");
 
         if (name.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Fund name cannot be empty."
-            );
+            throw new IllegalArgumentException("Fund name cannot be empty.");
         }
 
         if (name.length() > 100) {
-            throw new IllegalArgumentException(
-                    "Fund name cannot exceed 100 characters."
-            );
-        }
-    }
-
-    private static void validateOpeningBalance(Money openingBalance) {
-
-        Objects.requireNonNull(
-                openingBalance,
-                "Opening balance cannot be null."
-        );
-
-        if (openingBalance.isNegative()) {
-            throw new IllegalArgumentException(
-                    "Opening balance cannot be negative."
-            );
+            throw new IllegalArgumentException("Fund name cannot exceed 100 characters.");
         }
     }
 
     private static void validateTargetAmount(Money targetAmount) {
 
-        if (targetAmount != null && targetAmount.isNegative()) {
-            throw new IllegalArgumentException(
-                    "Target amount cannot be negative."
-            );
+        if (targetAmount != null && !targetAmount.isPositive()) {
+            throw new IllegalArgumentException("Target amount must be greater than zero when specified.");
         }
     }
 
     private static void validateDescription(String description) {
 
         if (description != null && description.length() > 500) {
-            throw new IllegalArgumentException(
-                    "Description cannot exceed 500 characters."
-            );
+            throw new IllegalArgumentException("Description cannot exceed 500 characters.");
         }
     }
 
@@ -229,16 +185,7 @@ public final class Fund {
         validateName(newName);
 
         return new Fund(
-                id,
-                newName,
-                fundType,
-                targetAmount,
-                openingBalance,
-                active,
-                description,
-                createdAt,
-                LocalDateTime.now()
-        );
+                id, newName, fundType, targetAmount, targetDate, active, description, createdAt, LocalDateTime.now());
     }
 
     public Fund changeDescription(String newDescription) {
@@ -246,33 +193,15 @@ public final class Fund {
         validateDescription(newDescription);
 
         return new Fund(
-                id,
-                name,
-                fundType,
-                targetAmount,
-                openingBalance,
-                active,
-                newDescription,
-                createdAt,
-                LocalDateTime.now()
-        );
+                id, name, fundType, targetAmount, targetDate, active, newDescription, createdAt, LocalDateTime.now());
     }
 
-    public Fund changeTargetAmount(Money newTargetAmount) {
+    public Fund changeTarget(Money newTargetAmount, LocalDate newTargetDate) {
 
         validateTargetAmount(newTargetAmount);
 
         return new Fund(
-                id,
-                name,
-                fundType,
-                newTargetAmount,
-                openingBalance,
-                active,
-                description,
-                createdAt,
-                LocalDateTime.now()
-        );
+                id, name, fundType, newTargetAmount, newTargetDate, active, description, createdAt, LocalDateTime.now());
     }
 
     public Fund activate() {
@@ -282,16 +211,7 @@ public final class Fund {
         }
 
         return new Fund(
-                id,
-                name,
-                fundType,
-                targetAmount,
-                openingBalance,
-                true,
-                description,
-                createdAt,
-                LocalDateTime.now()
-        );
+                id, name, fundType, targetAmount, targetDate, true, description, createdAt, LocalDateTime.now());
     }
 
     public Fund deactivate() {
@@ -301,15 +221,6 @@ public final class Fund {
         }
 
         return new Fund(
-                id,
-                name,
-                fundType,
-                targetAmount,
-                openingBalance,
-                false,
-                description,
-                createdAt,
-                LocalDateTime.now()
-        );
+                id, name, fundType, targetAmount, targetDate, false, description, createdAt, LocalDateTime.now());
     }
 }

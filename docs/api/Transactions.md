@@ -59,6 +59,7 @@ Creates a new transaction. The transaction is always created as `POSTED` — Ver
   "adjustmentReason": null,
   "migrationBatchId": null,
   "referenceTransactionId": null,
+  "fundId": null,
   "startsNewSalaryCycle": false
 }
 ```
@@ -77,6 +78,7 @@ Creates a new transaction. The transaction is always created as `POSTED` — Ver
 | `adjustmentReason` | enum, conditional | Required for ADJUSTMENT |
 | `migrationBatchId` | string, conditional | Required for MIGRATION |
 | `referenceTransactionId` | UUID, optional | For ADJUSTMENT, the transaction being corrected (if any) |
+| `fundId` | UUID, conditional | TRANSFER only. See [Fund-Linked Transfers](#fund-linked-transfers) |
 | `startsNewSalaryCycle` | boolean, optional, default `false` | INCOME only. See [Automatic Salary Cycle Creation](#automatic-salary-cycle-creation) |
 
 ## Required Fields by Transaction Type
@@ -85,10 +87,22 @@ Creates a new transaction. The transaction is always created as `POSTED` — Ver
 |------|----------|-----------|
 | INCOME | `toAccountId`, `categoryId` (income category), `salaryCycleId` (unless `startsNewSalaryCycle`) | `fromAccountId` |
 | EXPENSE | `fromAccountId`, `categoryId` (expense category), `salaryCycleId` | `toAccountId` |
-| TRANSFER | `fromAccountId`, `toAccountId` (must differ), `salaryCycleId` | `categoryId` |
+| TRANSFER (ordinary) | `fromAccountId`, `toAccountId` (must differ), `salaryCycleId` | `categoryId`, `fundId` |
+| TRANSFER (fund-linked) | exactly one of `fromAccountId`/`toAccountId`, `fundId`, `salaryCycleId` | `categoryId` |
 | ADJUSTMENT | `adjustmentReason` | not both `fromAccountId` and `toAccountId` at once |
 | OPENING_BALANCE | `toAccountId` | Only one per account, ever |
 | MIGRATION | `toAccountId`, `migrationBatchId` | — |
+
+## Fund-Linked Transfers
+
+Setting `fundId` on a `TRANSFER` turns it into a fund allocation or withdrawal instead of an ordinary
+account-to-account transfer — see `docs/api/Fund.md` and `docs/business/FundWorkflow.md`. Exactly one of
+`fromAccountId` / `toAccountId` must be set alongside `fundId`:
+
+- Allocation (account → fund): set `fromAccountId`, leave `toAccountId` null.
+- Withdrawal (fund → account): set `toAccountId`, leave `fromAccountId` null.
+
+The referenced fund must exist and be active.
 
 ## Automatic Salary Cycle Creation
 
@@ -106,6 +120,7 @@ Beyond structural checks, the server verifies:
 - Any referenced category exists, is active, and its type matches the transaction (an INCOME category for
   INCOME, an EXPENSE category for EXPENSE).
 - Any referenced salary cycle exists.
+- Any referenced fund exists and is active.
 - An account may have at most one `OPENING_BALANCE` transaction.
 - A `MANUAL_CORRECTION` adjustment must include non-blank `notes`.
 
@@ -117,8 +132,8 @@ Returns the created transaction (see [Transaction Response Shape](#transaction-r
 
 | Status | Cause |
 |--------|-------|
-| 400 | Structural validation failed (missing/forbidden field, non-positive amount, invalid transfer, duplicate opening balance, inactive account/category, category type mismatch) |
-| 404 | Referenced account, category, or salary cycle does not exist |
+| 400 | Structural validation failed (missing/forbidden field, non-positive amount, invalid transfer, duplicate opening balance, inactive account/category/fund, category type mismatch) |
+| 404 | Referenced account, category, salary cycle, or fund does not exist |
 
 ---
 
@@ -137,6 +152,7 @@ Lists transactions, filtered and paginated.
 | `accountId` | UUID | Matches either `fromAccountId` or `toAccountId` |
 | `categoryId` | UUID | Exact match |
 | `salaryCycleId` | UUID | Exact match |
+| `fundId` | UUID | Exact match |
 | `page`, `size`, `sort` | standard Spring pagination | Defaults to `size=20`, sorted by `transactionDate` descending |
 
 ## Response — `200 OK`
@@ -237,6 +253,7 @@ Marks a transaction as `REVERSED`. Idempotent — reversing an already-reversed 
   "categoryId": "c1a2b3c4-...",
   "salaryCycleId": "d1a2b3c4-...",
   "referenceNumber": null,
+  "fundId": null,
   "adjustmentReason": null,
   "description": "Groceries",
   "notes": null,
@@ -263,7 +280,7 @@ All errors follow RFC 7807:
 
 | Title | Status | Thrown for |
 |-------|--------|------------|
-| Resource Not Found | 404 | Referenced transaction, account, category or salary cycle does not exist |
+| Resource Not Found | 404 | Referenced transaction, account, category, salary cycle, or fund does not exist |
 | Validation Failed | 400 | Structural or business-rule validation failure |
 | Request Validation Failed | 400 | Bean Validation (`@NotNull`, `@Positive`, ...) failure |
 | Invalid State Transition | 409 | An operation is not legal for the transaction's current status |
@@ -280,6 +297,8 @@ These mirror `docs/domain/FinancialAccountingModel.md` and
 - Amounts are always positive; direction is determined by transaction type and which of `fromAccountId` /
   `toAccountId` is populated.
 - Transfers are excluded from income/expense reporting and never carry a category.
+- A fund-linked transfer (`fundId` set) touches exactly one real account; an ordinary transfer touches two.
+  See `docs/api/Fund.md`.
 - Only `POSTED` transactions are reported; `VOID` and `REVERSED` transactions are excluded.
 - An account may have at most one `OPENING_BALANCE` transaction.
 - A `MIGRATION` transaction always references a `migrationBatchId`.

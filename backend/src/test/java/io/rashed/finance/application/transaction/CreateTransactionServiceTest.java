@@ -9,9 +9,13 @@ import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.Account;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.accounts.AccountRepository;
+import io.rashed.finance.common.enums.FundType;
 import io.rashed.finance.domain.categories.Category;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.categories.CategoryRepository;
+import io.rashed.finance.domain.funds.Fund;
+import io.rashed.finance.domain.funds.FundId;
+import io.rashed.finance.domain.funds.FundRepository;
 import io.rashed.finance.domain.salarycycle.SalaryCycle;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleRepository;
@@ -34,12 +38,14 @@ class CreateTransactionServiceTest {
     private final AccountId accountId = AccountId.newId();
     private final CategoryId categoryId = CategoryId.newId();
     private final SalaryCycleId salaryCycleId = SalaryCycleId.newId();
+    private final FundId fundId = FundId.newId();
     private final LocalDate today = LocalDate.of(2026, 7, 25);
 
     private TransactionRepository transactionRepository;
     private AccountRepository accountRepository;
     private CategoryRepository categoryRepository;
     private SalaryCycleRepository salaryCycleRepository;
+    private FundRepository fundRepository;
     private OpenSalaryCycleForIncomeService openSalaryCycleForIncomeService;
     private CreateTransactionService service;
 
@@ -50,11 +56,12 @@ class CreateTransactionServiceTest {
         accountRepository = mock(AccountRepository.class);
         categoryRepository = mock(CategoryRepository.class);
         salaryCycleRepository = mock(SalaryCycleRepository.class);
+        fundRepository = mock(FundRepository.class);
         openSalaryCycleForIncomeService = mock(OpenSalaryCycleForIncomeService.class);
 
         service = new CreateTransactionService(
                 transactionRepository, accountRepository, categoryRepository, salaryCycleRepository,
-                openSalaryCycleForIncomeService);
+                fundRepository, openSalaryCycleForIncomeService);
 
         when(transactionRepository.save(any(Transaction.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -144,7 +151,7 @@ class CreateTransactionServiceTest {
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 TransactionType.INCOME, today, Money.of(80000), "Salary", null,
-                null, accountId, categoryId, null, null, null, null, null, null, true);
+                null, accountId, categoryId, null, null, null, null, null, null, null, true);
 
         Transaction transaction = service.execute(command);
 
@@ -159,7 +166,7 @@ class CreateTransactionServiceTest {
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 TransactionType.OPENING_BALANCE, today, Money.of(1000), "Opening", null,
-                null, accountId, null, null, null, null, null, null, null, false);
+                null, accountId, null, null, null, null, null, null, null, null, false);
 
         assertThrows(TransactionValidationException.class, () -> service.execute(command));
     }
@@ -172,18 +179,74 @@ class CreateTransactionServiceTest {
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 TransactionType.OPENING_BALANCE, today, Money.of(1000), "Opening", null,
-                null, accountId, null, null, null, null, null, null, null, false);
+                null, accountId, null, null, null, null, null, null, null, null, false);
 
         Transaction transaction = service.execute(command);
 
         assertEquals(TransactionType.OPENING_BALANCE, transaction.getTransactionType());
     }
 
+    @Test
+    void execute_createsFundAllocationWhenFundIsActive() {
+
+        givenActiveAccount(accountId);
+        givenSalaryCycleExists();
+        givenActiveFund(fundId, true);
+
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                TransactionType.TRANSFER, today, Money.of(500), "Save", null,
+                accountId, null, null, salaryCycleId, null, null, null, null, null, fundId, false);
+
+        Transaction transaction = service.execute(command);
+
+        assertEquals(fundId, transaction.getFundId());
+        assertEquals(accountId, transaction.getFromAccountId());
+    }
+
+    @Test
+    void execute_rejectsUnknownFund() {
+
+        givenActiveAccount(accountId);
+        givenSalaryCycleExists();
+        when(fundRepository.findById(fundId)).thenReturn(Optional.empty());
+
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                TransactionType.TRANSFER, today, Money.of(500), "Save", null,
+                accountId, null, null, salaryCycleId, null, null, null, null, null, fundId, false);
+
+        assertThrows(ResourceNotFoundException.class, () -> service.execute(command));
+    }
+
+    @Test
+    void execute_rejectsInactiveFund() {
+
+        givenActiveAccount(accountId);
+        givenSalaryCycleExists();
+        givenActiveFund(fundId, false);
+
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                TransactionType.TRANSFER, today, Money.of(500), "Save", null,
+                accountId, null, null, salaryCycleId, null, null, null, null, null, fundId, false);
+
+        assertThrows(TransactionValidationException.class, () -> service.execute(command));
+    }
+
+    private void givenActiveFund(FundId id, boolean active) {
+
+        Fund fund = Fund.create("Vacation", FundType.SAVINGS, null, null, null);
+
+        if (!active) {
+            fund = fund.deactivate();
+        }
+
+        when(fundRepository.findById(id)).thenReturn(Optional.of(fund));
+    }
+
     private CreateTransactionCommand expenseCommand() {
 
         return new CreateTransactionCommand(
                 TransactionType.EXPENSE, today, Money.of(500), "Groceries", null,
-                accountId, null, categoryId, salaryCycleId, null, null, null, null, null, false);
+                accountId, null, categoryId, salaryCycleId, null, null, null, null, null, null, false);
     }
 
     private void givenActiveAccount(AccountId id) {
