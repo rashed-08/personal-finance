@@ -118,9 +118,9 @@ public final class Transaction {
             toAccountId, null, salaryCycleId, null, null, null, null, null, now, now);
     }
 
-    public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId accountId, TransactionId referenceTransactionId, AdjustmentReason adjustmentReason, String description) {
+    public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId fromAccountId, AccountId toAccountId, TransactionId referenceTransactionId, AdjustmentReason adjustmentReason, String description) {
         validateAmount(amount);
-        validateAdjustment(accountId, adjustmentReason);
+        validateAdjustment(fromAccountId, toAccountId, adjustmentReason);
         LocalDateTime now = LocalDateTime.now();
 
         return new Transaction(
@@ -131,8 +131,8 @@ public final class Transaction {
                 amount,
                 description,
                 null,
-                accountId,
-                null,
+                fromAccountId,
+                toAccountId,
                 null,
                 null,
                 null,
@@ -237,11 +237,14 @@ public final class Transaction {
         }
     }
 
-    private static void validateAdjustment(AccountId accountId, AdjustmentReason adjustmentReason) {
-
-        Objects.requireNonNull(accountId, "Adjustment requires an account.");
+    private static void validateAdjustment(AccountId fromAccountId, AccountId toAccountId, AdjustmentReason adjustmentReason) {
 
         Objects.requireNonNull(adjustmentReason, "Adjustment reason is required.");
+
+        if ((fromAccountId == null) == (toAccountId == null)) {
+            throw new IllegalArgumentException(
+                    "Adjustment requires exactly one of fromAccountId or toAccountId.");
+        }
     }
 
     private static void validateOpeningBalance(AccountId accountId) {
@@ -318,6 +321,17 @@ public final class Transaction {
         return toAccountId != null;
     }
 
+    public Transaction withDetails(CategoryId categoryId, String description, String notes) {
+
+        if ((isExpense() || isIncome()) && categoryId == null) {
+            throw new IllegalArgumentException(
+                    (isExpense() ? "Expense" : "Income") + " requires a category.");
+        }
+
+        return new Transaction(id, transactionType, transactionStatus, transactionDate, amount, description, notes, fromAccountId, toAccountId,
+                categoryId, salaryCycleId, referenceNumber, migrationBatchId, reconciliationBatchId, adjustmentReason, referenceTransactionId, createdAt, LocalDateTime.now());
+    }
+
     public Transaction post() {
 
         if (isPosted()) {
@@ -382,5 +396,47 @@ public final class Transaction {
     public boolean hasReferenceTransaction(){
 
         return referenceTransactionId != null;
+    }
+
+    /**
+     * Whether this transaction increases (true) or decreases (false) the
+     * balance of {@link #affectedAccountId()}. Transfers touch two accounts
+     * in opposite directions and therefore have no single answer.
+     */
+    public boolean increasesBalance() {
+
+        return switch (transactionType) {
+
+            case INCOME, OPENING_BALANCE, MIGRATION -> true;
+
+            case EXPENSE -> false;
+
+            case ADJUSTMENT -> hasToAccount();
+
+            case TRANSFER -> throw new IllegalStateException(
+                    "Transfer affects two accounts and has no single balance direction.");
+        };
+    }
+
+    /**
+     * The single account this transaction moves money into or out of.
+     * Transfers touch two accounts and therefore have no single answer.
+     */
+    public AccountId affectedAccountId() {
+
+        if (isTransfer()) {
+            throw new IllegalStateException(
+                    "Transfer affects two accounts and has no single affected account.");
+        }
+
+        if (hasFromAccount()) {
+            return fromAccountId;
+        }
+
+        if (hasToAccount()) {
+            return toAccountId;
+        }
+
+        throw new IllegalStateException("Transaction has no associated account.");
     }
 }

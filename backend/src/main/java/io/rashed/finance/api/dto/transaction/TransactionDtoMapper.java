@@ -28,9 +28,10 @@ public final class TransactionDtoMapper {
                 request.categoryId() == null ? null : CategoryId.of(request.categoryId()),
                 request.salaryCycleId() == null ? null : SalaryCycleId.of(request.salaryCycleId()),
                 null,
+                request.migrationBatchId(),
                 null,
-                null,
-                null
+                request.adjustmentReason(),
+                request.referenceTransactionId() == null ? null : TransactionId.of(request.referenceTransactionId())
         );
     }
 

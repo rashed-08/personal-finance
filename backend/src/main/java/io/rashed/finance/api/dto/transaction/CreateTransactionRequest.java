@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import io.rashed.finance.common.enums.AdjustmentReason;
 import io.rashed.finance.common.enums.TransactionType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -31,6 +32,12 @@ public record CreateTransactionRequest(
 
         String description,
 
-        String notes
+        String notes,
+
+        AdjustmentReason adjustmentReason,
+
+        String migrationBatchId,
+
+        UUID referenceTransactionId
 ) {
 }

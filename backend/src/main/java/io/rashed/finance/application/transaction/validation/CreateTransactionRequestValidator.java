@@ -61,8 +61,11 @@ public final class CreateTransactionRequestValidator {
 
     private static void validateAdjustment(CreateTransactionRequest request) {
 
-        require(request.fromAccountId() != null,
-                "Adjustment requires account.");
+        require((request.fromAccountId() == null) != (request.toAccountId() == null),
+                "Adjustment requires exactly one of fromAccountId or toAccountId.");
+
+        require(request.adjustmentReason() != null,
+                "Adjustment requires adjustmentReason.");
     }
 
     private static void validateOpeningBalance(CreateTransactionRequest request) {
@@ -75,6 +78,9 @@ public final class CreateTransactionRequestValidator {
 
         require(request.toAccountId() != null,
                 "Migration requires account.");
+
+        require(request.migrationBatchId() != null && !request.migrationBatchId().isBlank(),
+                "Migration requires migrationBatchId.");
     }
 
     private static void require(boolean condition, String message) {

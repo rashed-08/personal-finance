@@ -58,7 +58,8 @@ public class CreateTransactionService {
                     command.transactionDate(),
                     command.amount(),
                     command.fromAccountId(),
-                    command.reconciliationBatchId(),
+                    command.toAccountId(),
+                    command.referenceTransactionId(),
                     command.adjustmentReason(),
                     command.description()
             );
