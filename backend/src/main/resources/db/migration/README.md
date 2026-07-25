@@ -17,10 +17,11 @@ Each migration is immutable once it has been executed in a shared environment.
 Consolidated from a longer chain of incremental migrations (formerly V1–V10) while the project is still in
 development and every local database can be recreated from scratch. Schema fixes that were originally separate
 migrations (nullable `salary_cycles.cycle_end_date` and `transactions.salary_cycle_id`, `reference_transaction_id`,
-`migration_batch_id`/`reconciliation_batch_id` as VARCHAR, `fund_id` + its constraints, `funds.target_amount > 0`)
-are now folded directly into V1. Data seeding (categories, settings, funds) is now a single V2. This is safe only
-because no shared/production environment has these migrations applied yet — never do this once a migration has
-run anywhere outside local development.
+`migration_batch_id`/`reconciliation_batch_id` as VARCHAR, `fund_id` + its constraints, `funds.target_amount > 0`,
+the `cash_reconciliations`/`cash_snapshots` redesign replacing the old unused `cash` table) are now folded
+directly into V1. Data seeding (categories, settings, funds) is now a single V2. This is safe only because no
+shared/production environment has these migrations applied yet — never do this once a migration has run anywhere
+outside local development.
 
 ---
 
