@@ -153,6 +153,7 @@ Lists transactions, filtered and paginated.
 | `categoryId` | UUID | Exact match |
 | `salaryCycleId` | UUID | Exact match |
 | `fundId` | UUID | Exact match |
+| `loanId` | UUID | Exact match. Use this to retrieve a loan's full transaction history — see `docs/api/Loan.md` |
 | `page`, `size`, `sort` | standard Spring pagination | Defaults to `size=20`, sorted by `transactionDate` descending |
 
 ## Response — `200 OK`
@@ -254,6 +255,7 @@ Marks a transaction as `REVERSED`. Idempotent — reversing an already-reversed 
   "salaryCycleId": "d1a2b3c4-...",
   "referenceNumber": null,
   "fundId": null,
+  "loanId": null,
   "adjustmentReason": null,
   "description": "Groceries",
   "notes": null,
@@ -299,6 +301,8 @@ These mirror `docs/domain/FinancialAccountingModel.md` and
 - Transfers are excluded from income/expense reporting and never carry a category.
 - A fund-linked transfer (`fundId` set) touches exactly one real account; an ordinary transfer touches two.
   See `docs/api/Fund.md`.
+- A loan-linked transfer (`loanId` set) is created only via `docs/api/Loan.md`'s dedicated endpoints, never
+  through this generic API — but is queryable here via `?loanId=...`.
 - Only `POSTED` transactions are reported; `VOID` and `REVERSED` transactions are excluded.
 - An account may have at most one `OPENING_BALANCE` transaction.
 - A `MIGRATION` transaction always references a `migrationBatchId`.

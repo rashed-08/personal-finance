@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import io.rashed.finance.common.enums.LoanType;
 import io.rashed.finance.common.valueobject.Money;
+import io.rashed.finance.domain.accounts.AccountId;
+import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 
 public record CreateLoanCommand(
 
@@ -13,7 +15,13 @@ public record CreateLoanCommand(
 
         Money principalAmount,
 
+        LocalDate startDate,
+
         LocalDate dueDate,
+
+        AccountId accountId,
+
+        SalaryCycleId salaryCycleId,
 
         String description
 

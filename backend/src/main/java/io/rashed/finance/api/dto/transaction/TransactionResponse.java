@@ -33,6 +33,8 @@ public record TransactionResponse(
 
         UUID fundId,
 
+        UUID loanId,
+
         AdjustmentReason adjustmentReason,
 
         String description,

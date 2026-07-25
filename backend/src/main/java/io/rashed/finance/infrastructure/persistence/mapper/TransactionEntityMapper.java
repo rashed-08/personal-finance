@@ -4,6 +4,7 @@ import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.funds.FundId;
+import io.rashed.finance.domain.loans.LoanId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.transactions.Transaction;
 import io.rashed.finance.domain.transactions.TransactionId;
@@ -38,6 +39,7 @@ public final class TransactionEntityMapper {
                 transaction.getNotes(),
                 transaction.getReferenceTransactionId() != null ? transaction.getReferenceTransactionId().getValue() : null,
                 transaction.getFundId() != null ? transaction.getFundId().getValue() : null,
+                transaction.getLoanId() != null ? transaction.getLoanId().getValue() : null,
                 transaction.getCreatedAt(),
                 transaction.getUpdatedAt()
         );
@@ -67,6 +69,7 @@ public final class TransactionEntityMapper {
                 entity.getAdjustmentReason(),
                 entity.getReferenceTransactionId() != null ? TransactionId.of(entity.getReferenceTransactionId()) : null,
                 entity.getFundId() != null ? FundId.of(entity.getFundId()) : null,
+                entity.getLoanId() != null ? LoanId.of(entity.getLoanId()) : null,
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

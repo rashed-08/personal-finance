@@ -62,6 +62,14 @@ export default function MainLayout() {
                         } >
                         🎯 Funds
                     </NavLink>
+
+                    <NavLink
+                        to="/loans"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        🤝 Loans
+                    </NavLink>
                 </nav>
             </aside>
 

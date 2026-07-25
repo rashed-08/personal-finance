@@ -455,6 +455,9 @@ a {
 .badge--fund-investment { color: #c11574; }
 .badge--fund-custom { color: #667085; }
 
+.badge--loan-receivable { color: #0e9384; }
+.badge--loan-payable { color: #b54708; }
+
 .pill {
   display: inline-flex;
   align-items: center;

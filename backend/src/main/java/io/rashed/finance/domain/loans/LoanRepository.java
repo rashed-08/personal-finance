@@ -14,6 +14,4 @@ public interface LoanRepository {
     List<Loan> findActiveLoans();
 
     boolean existsById(LoanId id);
-
-    void deleteById(LoanId id);
 }
