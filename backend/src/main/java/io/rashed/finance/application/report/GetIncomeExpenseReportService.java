@@ -49,7 +49,7 @@ public class GetIncomeExpenseReportService {
 
         TransactionFilter filter = new TransactionFilter(
                 query.fromDate(), query.toDate(), query.transactionType(), TransactionStatus.POSTED,
-                query.accountId(), query.categoryId(), query.salaryCycleId(), null, null);
+                query.accountId(), query.categoryId(), query.salaryCycleId(), null, null, null);
 
         List<Transaction> transactions = transactionRepository.find(filter, Pageable.unpaged()).getContent();
 

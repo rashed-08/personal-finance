@@ -38,7 +38,7 @@ public class GetCategoryReportService {
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found."));
 
         TransactionFilter filter = new TransactionFilter(
-                query.fromDate(), query.toDate(), null, TransactionStatus.POSTED, null, query.categoryId(), null, null, null);
+                query.fromDate(), query.toDate(), null, TransactionStatus.POSTED, null, query.categoryId(), null, null, null, null);
 
         List<Transaction> transactions = transactionRepository.find(filter, Pageable.unpaged()).getContent();
 

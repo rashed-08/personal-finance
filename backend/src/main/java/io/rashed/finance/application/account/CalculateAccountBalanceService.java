@@ -33,7 +33,7 @@ public class CalculateAccountBalanceService {
         Objects.requireNonNull(asOfDate, "Date cannot be null.");
 
         TransactionFilter filter = new TransactionFilter(
-                null, asOfDate, null, TransactionStatus.POSTED, accountId, null, null, null, null);
+                null, asOfDate, null, TransactionStatus.POSTED, accountId, null, null, null, null, null);
 
         Money balance = Money.zero();
 

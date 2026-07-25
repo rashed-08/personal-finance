@@ -85,7 +85,7 @@ public class CalculateCarryForwardService {
         Money total = Money.zero();
 
         TransactionFilter filter = new TransactionFilter(
-                null, date.minusDays(1), null, TransactionStatus.POSTED, null, null, null, null, null);
+                null, date.minusDays(1), null, TransactionStatus.POSTED, null, null, null, null, null, null);
 
         for (Transaction transaction : transactionRepository.find(filter, Pageable.unpaged())) {
 
@@ -104,7 +104,7 @@ public class CalculateCarryForwardService {
     private List<Transaction> transactionsIn(SalaryCycleId salaryCycleId) {
 
         TransactionFilter filter = new TransactionFilter(
-                null, null, null, TransactionStatus.POSTED, null, null, salaryCycleId, null, null);
+                null, null, null, TransactionStatus.POSTED, null, null, salaryCycleId, null, null, null);
 
         return transactionRepository.find(filter, Pageable.unpaged()).getContent();
     }

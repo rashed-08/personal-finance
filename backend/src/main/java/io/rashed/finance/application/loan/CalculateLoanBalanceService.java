@@ -40,7 +40,7 @@ public class CalculateLoanBalanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Loan not found."));
 
         TransactionFilter filter = new TransactionFilter(
-                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, null, loanId);
+                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, null, loanId, null);
 
         Money totalRepayments = Money.zero();
 

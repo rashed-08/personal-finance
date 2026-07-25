@@ -52,7 +52,7 @@ public class GetAccountStatementService {
                 : Money.zero();
 
         TransactionFilter filter = new TransactionFilter(
-                fromDate, toDate, null, TransactionStatus.POSTED, accountId, null, null, null, null);
+                fromDate, toDate, null, TransactionStatus.POSTED, accountId, null, null, null, null, null);
 
         List<Transaction> sorted = transactionRepository.find(filter, Pageable.unpaged())
                 .stream()

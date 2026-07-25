@@ -209,11 +209,17 @@ Possible values
 - EXPENSE
 - TRANSFER
 - ADJUSTMENT
+- OPENING_BALANCE
+- MIGRATION
 
 Future
 
-- IMPORT
 - REVERSAL
+
+Note: an earlier draft of this document listed a future "IMPORT" type. Per AR-020
+(`docs/review/ArchitectureReview.md`), imported transactions instead reuse their real type (typically EXPENSE)
+tagged with `migration_batch_id` — see `02-transaction-types.md`'s Migration section and
+`docs/business/GoogleKeepMigration.md`.
 
 ---
 
