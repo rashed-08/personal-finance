@@ -46,6 +46,14 @@ export default function MainLayout() {
                         } >
                         📅 Salary Cycles
                     </NavLink>
+
+                    <NavLink
+                        to="/cash-reconciliation"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        💵 Cash Reconciliation
+                    </NavLink>
                 </nav>
             </aside>
 

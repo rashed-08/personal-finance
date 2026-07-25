@@ -817,6 +817,52 @@ a {
 }
 
 /* =============================================================================
+   Reconciliation detail (expandable row)
+   ========================================================================== */
+
+.reconciliation-detail {
+  padding: 16px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reconciliation-detail__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-subtle);
+}
+
+.reconciliation-detail__snapshots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reconciliation-detail__snapshots li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.reconciliation-detail__snapshots li:last-child {
+  border-bottom: none;
+}
+
+.reconciliation-detail__result {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+/* =============================================================================
    Filter bar
    ========================================================================== */
 
