@@ -34,8 +34,8 @@ Use Flyway's standard naming convention:
 
 ```
 V1__initial_schema.sql
-V2__seed_default_categories.sql
-V3__default_settings.sql
+V2__seed_data.sql
+V3__add_recurring_transactions_index.sql
 ```
 
 Migration names should be lowercase with words separated by underscores.

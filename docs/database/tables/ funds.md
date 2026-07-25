@@ -82,7 +82,7 @@ id
 | created_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Creation timestamp |
 | updated_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Last update |
 
-Also present as of V10: `transactions.fund_id` (nullable UUID, FK to `funds.id`) — see [Relationships](#relationships) below.
+Also present: `transactions.fund_id` (nullable UUID, FK to `funds.id`) — see [Relationships](#relationships) below.
 
 ---
 
@@ -150,8 +150,7 @@ There is no default — every fund must specify a type explicitly.
 
 target_amount
 
-Must be greater than zero when specified (`chk_funds_target_amount`, tightened from `>= 0` to `> 0` in V10 to
-match this rule).
+Must be greater than zero when specified (`chk_funds_target_amount`).
 
 ---
 
@@ -197,7 +196,7 @@ Transactions
 Reports
 ```
 
-Version 1 stores an optional reference from transactions (`transactions.fund_id`, added in V10).
+Version 1 stores an optional reference from transactions (`transactions.fund_id`).
 
 A fund allocation or withdrawal is a `TRANSFER`-type transaction where `fund_id` is set and exactly one of
 `from_account_id` / `to_account_id` is also set (`chk_transactions_fund_transfer`):

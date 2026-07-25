@@ -145,6 +145,11 @@ EXECUTE FUNCTION update_updated_at_column();
 -- ----------------------------------------------------------------------------
 -- Table: salary_cycles
 -- ----------------------------------------------------------------------------
+--
+-- cycle_end_date is nullable: a cycle stays open until the next salary
+-- payment closes it (docs/business/SalaryWorkflow.md). The existing
+-- chk_salary_cycle_dates CHECK (start <= end) already passes when end is
+-- NULL, so no separate constraint is needed for the open-ended case.
 
 CREATE TABLE salary_cycles (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -152,7 +157,7 @@ CREATE TABLE salary_cycles (
     cycle_name              VARCHAR(100) NOT NULL,
 
     cycle_start_date        DATE NOT NULL,
-    cycle_end_date          DATE NOT NULL,
+    cycle_end_date          DATE,
 
     salary_received_date    DATE,
 
@@ -166,7 +171,7 @@ CREATE TABLE salary_cycles (
     updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_salary_cycle_dates
-        CHECK (cycle_start_date <= cycle_end_date),
+        CHECK (cycle_end_date IS NULL OR cycle_start_date <= cycle_end_date),
 
     CONSTRAINT chk_salary_cycle_carry_forward
         CHECK (carry_forward_amount >= 0)
@@ -185,6 +190,21 @@ EXECUTE FUNCTION update_updated_at_column();
 -- ----------------------------------------------------------------------------
 -- Table: transactions
 -- ----------------------------------------------------------------------------
+--
+-- salary_cycle_id is nullable: ADJUSTMENT, OPENING_BALANCE and MIGRATION
+-- transactions correct, seed or import balances rather than track
+-- day-to-day spending, so they are not part of a salary cycle. It remains
+-- required for INCOME, EXPENSE and TRANSFER via chk_transactions_salary_cycle_required.
+--
+-- migration_batch_id / reconciliation_batch_id are free-form business
+-- identifiers (e.g. "google-keep-2026-07"), not UUIDs — hence VARCHAR(100).
+--
+-- fund_id links a TRANSFER to a fund allocation/withdrawal instead of an
+-- ordinary account-to-account transfer (see docs/database/tables/ funds.md
+-- and docs/api/Fund.md):
+--   Allocation: from_account_id set, to_account_id null, fund_id set.
+--   Withdrawal: to_account_id set, from_account_id null, fund_id set.
+-- Ordinary transfers are unaffected (fund_id stays null, both accounts set).
 
 CREATE TABLE transactions (
     id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -207,15 +227,19 @@ CREATE TABLE transactions (
 
     category_id                 UUID,
 
-    salary_cycle_id             UUID NOT NULL,
+    salary_cycle_id             UUID,
 
     reference_number            VARCHAR(100),
 
-    migration_batch_id          UUID,
+    migration_batch_id          VARCHAR(100),
 
-    reconciliation_batch_id     UUID,
+    reconciliation_batch_id     VARCHAR(100),
 
     adjustment_reason           VARCHAR(50),
+
+    reference_transaction_id    UUID,
+
+    fund_id                     UUID,
 
     created_at                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -257,7 +281,8 @@ CREATE TABLE transactions (
                 'OPENING_BALANCE',
                 'DATA_MIGRATION',
                 'MANUAL_CORRECTION',
-                'SYSTEM_CORRECTION'
+                'SYSTEM_CORRECTION',
+                'TRANSACTION_UPDATE'
             )
         ),
 
@@ -266,6 +291,21 @@ CREATE TABLE transactions (
             from_account_id IS NULL
             OR to_account_id IS NULL
             OR from_account_id <> to_account_id
+        ),
+
+    CONSTRAINT chk_transactions_salary_cycle_required
+        CHECK (
+            transaction_type IN ('ADJUSTMENT', 'OPENING_BALANCE', 'MIGRATION')
+            OR salary_cycle_id IS NOT NULL
+        ),
+
+    CONSTRAINT chk_transactions_fund_transfer
+        CHECK (
+            fund_id IS NULL
+            OR (
+                transaction_type = 'TRANSFER'
+                AND (from_account_id IS NULL) != (to_account_id IS NULL)
+            )
         )
 );
 
@@ -317,6 +357,13 @@ ALTER TABLE transactions
         ON UPDATE RESTRICT
         ON DELETE RESTRICT;
 
+ALTER TABLE transactions
+    ADD CONSTRAINT fk_transactions_reference_transaction
+        FOREIGN KEY (reference_transaction_id)
+        REFERENCES transactions(id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT;
+
 -- ============================================================================
 -- Part 4.1
 -- Table: funds
@@ -347,7 +394,7 @@ CREATE TABLE funds (
     CONSTRAINT chk_funds_target_amount
         CHECK (
             target_amount IS NULL
-            OR target_amount >= 0
+            OR target_amount > 0
         ),
 
     CONSTRAINT chk_funds_type
@@ -374,6 +421,13 @@ CREATE TRIGGER trg_funds_updated_at
 BEFORE UPDATE ON funds
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE transactions
+    ADD CONSTRAINT fk_transactions_fund
+        FOREIGN KEY (fund_id)
+        REFERENCES funds(id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT;
 
 -- ============================================================================
 -- Part 4.2
@@ -447,6 +501,9 @@ EXECUTE FUNCTION update_updated_at_column();
 -- Part 4.3
 -- Table: cash
 -- ============================================================================
+--
+-- Not yet wired to any application code (entity/mapper/repository are still
+-- empty stubs) — reserved for the Cash Reconciliation feature.
 
 CREATE TABLE cash (
     id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -832,6 +889,12 @@ CREATE INDEX idx_transactions_migration
 CREATE INDEX idx_transactions_adjustment_reason
     ON transactions(adjustment_reason);
 
+CREATE INDEX idx_transactions_reference_transaction
+    ON transactions(reference_transaction_id);
+
+CREATE INDEX idx_transactions_fund
+    ON transactions(fund_id);
+
 -- Composite indexes
 
 CREATE INDEX idx_transactions_cycle_date
@@ -855,6 +918,12 @@ CREATE INDEX idx_transactions_category_date
 CREATE INDEX idx_transactions_type_date
     ON transactions (
         transaction_type,
+        transaction_date
+    );
+
+CREATE INDEX idx_transactions_fund_date
+    ON transactions (
+        fund_id,
         transaction_date
     );
 
@@ -923,4 +992,3 @@ CREATE INDEX idx_backup_status
 
 CREATE INDEX idx_backup_provider
     ON backup_history(provider);
-
