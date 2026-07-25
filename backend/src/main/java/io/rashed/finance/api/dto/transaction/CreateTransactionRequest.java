@@ -27,7 +27,6 @@ public record CreateTransactionRequest(
 
         UUID categoryId,
 
-        @NotNull
         UUID salaryCycleId,
 
         String description,

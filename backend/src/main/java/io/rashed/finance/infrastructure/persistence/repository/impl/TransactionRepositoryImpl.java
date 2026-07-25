@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 import lombok.RequiredArgsConstructor;
 
 
+import io.rashed.finance.common.enums.TransactionType;
+import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.transactions.Transaction;
 import io.rashed.finance.domain.transactions.TransactionFilter;
 import io.rashed.finance.domain.transactions.TransactionId;
@@ -78,5 +80,16 @@ public class TransactionRepositoryImpl
 
         return jpaRepository.findAll(TransactionSpecification.withFilter(filter), pageable)
                 .map(TransactionEntityMapper::toDomain);
+    }
+
+
+
+    @Override
+    public boolean existsOpeningBalanceForAccount(AccountId accountId) {
+
+        return jpaRepository.existsByTransactionTypeAndToAccountId(
+                TransactionType.OPENING_BALANCE,
+                accountId.getValue()
+        );
     }
 }

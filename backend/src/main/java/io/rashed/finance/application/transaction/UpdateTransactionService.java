@@ -142,7 +142,8 @@ public class UpdateTransactionService {
                         adjustmentIncreasesBalance ? affectedAccountId : null,
                         existing.getId(),
                         AdjustmentReason.TRANSACTION_UPDATE,
-                        "Adjustment for transaction update (" + existing.getId().getValue() + ")"
+                        "Adjustment for transaction update (" + existing.getId().getValue() + ")",
+                        null
                 );
 
 

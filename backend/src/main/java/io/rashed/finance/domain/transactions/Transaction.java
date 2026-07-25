@@ -118,9 +118,9 @@ public final class Transaction {
             toAccountId, null, salaryCycleId, null, null, null, null, null, now, now);
     }
 
-    public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId fromAccountId, AccountId toAccountId, TransactionId referenceTransactionId, AdjustmentReason adjustmentReason, String description) {
+    public static Transaction adjustment(TransactionId id, LocalDate transactionDate, Money amount, AccountId fromAccountId, AccountId toAccountId, TransactionId referenceTransactionId, AdjustmentReason adjustmentReason, String description, String notes) {
         validateAmount(amount);
-        validateAdjustment(fromAccountId, toAccountId, adjustmentReason);
+        validateAdjustment(fromAccountId, toAccountId, adjustmentReason, notes);
         LocalDateTime now = LocalDateTime.now();
 
         return new Transaction(
@@ -130,7 +130,7 @@ public final class Transaction {
                 transactionDate,
                 amount,
                 description,
-                null,
+                notes,
                 fromAccountId,
                 toAccountId,
                 null,
@@ -237,13 +237,17 @@ public final class Transaction {
         }
     }
 
-    private static void validateAdjustment(AccountId fromAccountId, AccountId toAccountId, AdjustmentReason adjustmentReason) {
+    private static void validateAdjustment(AccountId fromAccountId, AccountId toAccountId, AdjustmentReason adjustmentReason, String notes) {
 
         Objects.requireNonNull(adjustmentReason, "Adjustment reason is required.");
 
-        if ((fromAccountId == null) == (toAccountId == null)) {
+        if (fromAccountId != null && toAccountId != null) {
             throw new IllegalArgumentException(
-                    "Adjustment requires exactly one of fromAccountId or toAccountId.");
+                    "Adjustment cannot reference both fromAccountId and toAccountId.");
+        }
+
+        if (adjustmentReason == AdjustmentReason.MANUAL_CORRECTION && (notes == null || notes.isBlank())) {
+            throw new IllegalArgumentException("Manual correction requires notes explaining the adjustment.");
         }
     }
 

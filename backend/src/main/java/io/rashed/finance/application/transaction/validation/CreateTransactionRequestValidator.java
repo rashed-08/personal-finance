@@ -1,6 +1,7 @@
 package io.rashed.finance.application.transaction.validation;
 
 import io.rashed.finance.api.dto.transaction.CreateTransactionRequest;
+import io.rashed.finance.common.enums.AdjustmentReason;
 import io.rashed.finance.common.exception.TransactionValidationException;
 
 public final class CreateTransactionRequestValidator {
@@ -36,6 +37,9 @@ public final class CreateTransactionRequestValidator {
 
         require(request.categoryId() != null,
                 "Expense requires categoryId.");
+
+        require(request.salaryCycleId() != null,
+                "Expense requires salaryCycleId.");
     }
 
     private static void validateIncome(CreateTransactionRequest request) {
@@ -45,6 +49,9 @@ public final class CreateTransactionRequestValidator {
 
         require(request.categoryId() != null,
                 "Income requires categoryId.");
+
+        require(request.salaryCycleId() != null,
+                "Income requires salaryCycleId.");
     }
 
     private static void validateTransfer(CreateTransactionRequest request) {
@@ -57,15 +64,25 @@ public final class CreateTransactionRequestValidator {
 
         require(!request.fromAccountId().equals(request.toAccountId()),
                 "Source and destination account cannot be same.");
+
+        require(request.categoryId() == null,
+                "Transfer transactions cannot have a category.");
+
+        require(request.salaryCycleId() != null,
+                "Transfer requires salaryCycleId.");
     }
 
     private static void validateAdjustment(CreateTransactionRequest request) {
 
-        require((request.fromAccountId() == null) != (request.toAccountId() == null),
-                "Adjustment requires exactly one of fromAccountId or toAccountId.");
+        require(request.fromAccountId() == null || request.toAccountId() == null,
+                "Adjustment cannot reference both fromAccountId and toAccountId.");
 
         require(request.adjustmentReason() != null,
                 "Adjustment requires adjustmentReason.");
+
+        require(request.adjustmentReason() != AdjustmentReason.MANUAL_CORRECTION
+                        || (request.notes() != null && !request.notes().isBlank()),
+                "Manual correction requires notes explaining the adjustment.");
     }
 
     private static void validateOpeningBalance(CreateTransactionRequest request) {

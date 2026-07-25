@@ -8,6 +8,7 @@ import io.rashed.finance.api.dto.transaction.TransactionResponse;
 import io.rashed.finance.api.dto.transaction.UpdateTransactionRequest;
 import io.rashed.finance.application.transaction.CreateTransactionCommand;
 import io.rashed.finance.application.transaction.CreateTransactionService;
+import io.rashed.finance.application.transaction.ReverseTransactionService;
 import io.rashed.finance.application.transaction.UpdateTransactionService;
 import io.rashed.finance.application.transaction.VoidTransactionService;
 import io.rashed.finance.application.transaction.query.GetTransactionService;
@@ -33,13 +34,15 @@ public class TransactionController {
     private final GetTransactionService getTransactionService;
     private final ListTransactionsService listTransactionsService;
     private final VoidTransactionService voidTransactionService;
+    private final ReverseTransactionService reverseTransactionService;
     private final UpdateTransactionService updateTransactionService;
 
-    public TransactionController(CreateTransactionService createTransactionService, GetTransactionService getTransactionService, ListTransactionsService listTransactionsService, VoidTransactionService voidTransactionService, UpdateTransactionService updateTransactionService) {
+    public TransactionController(CreateTransactionService createTransactionService, GetTransactionService getTransactionService, ListTransactionsService listTransactionsService, VoidTransactionService voidTransactionService, ReverseTransactionService reverseTransactionService, UpdateTransactionService updateTransactionService) {
         this.createTransactionService = createTransactionService;
         this.getTransactionService = getTransactionService;
         this.listTransactionsService = listTransactionsService;
         this.voidTransactionService = voidTransactionService;
+        this.reverseTransactionService = reverseTransactionService;
         this.updateTransactionService = updateTransactionService;
     }
 
@@ -91,6 +94,16 @@ public class TransactionController {
 
         Transaction transaction =
                 voidTransactionService.execute(TransactionId.of(id));
+
+        return TransactionDtoMapper.toResponse(transaction);
+    }
+
+    @PatchMapping("/{id}/reverse")
+    public TransactionResponse reverseTransaction(
+            @PathVariable UUID id) {
+
+        Transaction transaction =
+                reverseTransactionService.execute(TransactionId.of(id));
 
         return TransactionDtoMapper.toResponse(transaction);
     }
