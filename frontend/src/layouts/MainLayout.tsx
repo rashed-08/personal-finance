@@ -70,6 +70,14 @@ export default function MainLayout() {
                         } >
                         🤝 Loans
                     </NavLink>
+
+                    <NavLink
+                        to="/recurring-transactions"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        🔁 Recurring
+                    </NavLink>
                 </nav>
             </aside>
 
