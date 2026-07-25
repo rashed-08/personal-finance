@@ -448,6 +448,13 @@ a {
 .badge--txn-opening-balance { color: #7839ee; }
 .badge--txn-migration { color: #3538cd; }
 
+.badge--fund-emergency { color: #d92d20; }
+.badge--fund-savings { color: #0e9384; }
+.badge--fund-goal { color: #175cd3; }
+.badge--fund-zakat { color: #7839ee; }
+.badge--fund-investment { color: #c11574; }
+.badge--fund-custom { color: #667085; }
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -488,6 +495,32 @@ a {
 /* Signed transaction amounts (+ increases, − decreases a balance) */
 .cell-amount--increase { color: var(--success); }
 .cell-amount--decrease { color: var(--danger); }
+
+/* Fund goal progress (current balance / target amount) */
+.goal-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.goal-progress__track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.goal-progress__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+}
+
+.goal-progress__label {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
 
 /* =============================================================================
    States: loading / empty / error

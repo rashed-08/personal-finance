@@ -60,6 +60,20 @@ public final class CreateTransactionRequestValidator {
 
     private static void validateTransfer(CreateTransactionRequest request) {
 
+        require(request.categoryId() == null,
+                "Transfer transactions cannot have a category.");
+
+        require(request.salaryCycleId() != null,
+                "Transfer requires salaryCycleId.");
+
+        if (request.fundId() != null) {
+
+            require((request.fromAccountId() == null) != (request.toAccountId() == null),
+                    "A fund transfer requires exactly one of fromAccountId or toAccountId.");
+
+            return;
+        }
+
         require(request.fromAccountId() != null,
                 "Transfer requires fromAccountId.");
 
@@ -68,12 +82,6 @@ public final class CreateTransactionRequestValidator {
 
         require(!request.fromAccountId().equals(request.toAccountId()),
                 "Source and destination account cannot be same.");
-
-        require(request.categoryId() == null,
-                "Transfer transactions cannot have a category.");
-
-        require(request.salaryCycleId() != null,
-                "Transfer requires salaryCycleId.");
     }
 
     private static void validateAdjustment(CreateTransactionRequest request) {

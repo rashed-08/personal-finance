@@ -74,13 +74,15 @@ id
 |---------|------|----------|---------|-------------|
 | id | UUID | No | Generated | Primary Key |
 | name | VARCHAR(100) | No | | Fund name |
-| fund_type | VARCHAR(30) | No | GENERAL | General classification |
+| fund_type | VARCHAR(30) | No | — (must be supplied) | Classification |
 | target_amount | NUMERIC(18,2) | Yes | | Optional savings goal |
 | target_date | DATE | Yes | | Optional completion target |
-| description | VARCHAR(1000) | Yes | | Notes |
+| description | TEXT | Yes | | Notes (domain enforces max 500 characters) |
 | is_active | BOOLEAN | No | TRUE | Active status |
 | created_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Creation timestamp |
 | updated_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Last update |
+
+Also present as of V10: `transactions.fund_id` (nullable UUID, FK to `funds.id`) — see [Relationships](#relationships) below.
 
 ---
 
@@ -133,36 +135,31 @@ Future
 
 fund_type
 
-Allowed values
+Allowed values (`chk_funds_type`, matches `FundType`)
 
-- GENERAL
 - EMERGENCY
-- ZAKAT
-- PURCHASE
-- DONATION
 - SAVINGS
-
-Future
-
+- GOAL
+- ZAKAT
 - INVESTMENT
-- RETIREMENT
-- EDUCATION
+- CUSTOM
+
+There is no default — every fund must specify a type explicitly.
 
 ---
 
 target_amount
 
-Must be greater than zero when specified.
+Must be greater than zero when specified (`chk_funds_target_amount`, tightened from `>= 0` to `> 0` in V10 to
+match this rule).
 
 ---
 
 # Unique Constraints
 
-Recommended
+Enforced: `uk_funds_name UNIQUE (name)`.
 
-(name)
-
-Each fund name should be unique.
+Each fund name is unique.
 
 ---
 
@@ -200,7 +197,13 @@ Transactions
 Reports
 ```
 
-Version 1 stores an optional reference from transactions.
+Version 1 stores an optional reference from transactions (`transactions.fund_id`, added in V10).
+
+A fund allocation or withdrawal is a `TRANSFER`-type transaction where `fund_id` is set and exactly one of
+`from_account_id` / `to_account_id` is also set (`chk_transactions_fund_transfer`):
+
+- Allocation (account → fund): `from_account_id` set, `to_account_id` null.
+- Withdrawal (fund → account): `to_account_id` set, `from_account_id` null.
 
 Future versions may introduce a dedicated `fund_allocations` table.
 
@@ -244,6 +247,7 @@ Historical transactions remain unchanged.
 - Fund balance is always calculated.
 - Users may create unlimited funds.
 - Funds may exist without a target amount.
+- A fund may only be closed (deactivated) once its derived balance is zero.
 - Closed funds remain available for historical reporting.
 
 ---
@@ -320,9 +324,10 @@ Used in
 |------|------|--------|
 | Emergency Fund | EMERGENCY | 200000 |
 | Zakat Fund | ZAKAT | — |
-| Laptop Fund | PURCHASE | 150000 |
+| New Laptop | GOAL | 150000 |
 | House Deposit | SAVINGS | 500000 |
 | Travel Fund | SAVINGS | 100000 |
+| Stock Portfolio | INVESTMENT | — |
 
 ---
 

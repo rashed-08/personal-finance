@@ -14,6 +14,9 @@ import io.rashed.finance.domain.accounts.AccountRepository;
 import io.rashed.finance.domain.categories.Category;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.categories.CategoryRepository;
+import io.rashed.finance.domain.funds.Fund;
+import io.rashed.finance.domain.funds.FundId;
+import io.rashed.finance.domain.funds.FundRepository;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleRepository;
 import io.rashed.finance.domain.transactions.Transaction;
@@ -27,6 +30,7 @@ public class CreateTransactionService {
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final SalaryCycleRepository salaryCycleRepository;
+    private final FundRepository fundRepository;
     private final OpenSalaryCycleForIncomeService openSalaryCycleForIncomeService;
 
     public CreateTransactionService(
@@ -34,12 +38,14 @@ public class CreateTransactionService {
             AccountRepository accountRepository,
             CategoryRepository categoryRepository,
             SalaryCycleRepository salaryCycleRepository,
+            FundRepository fundRepository,
             OpenSalaryCycleForIncomeService openSalaryCycleForIncomeService
     ) {
         this.transactionRepository = Objects.requireNonNull(transactionRepository);
         this.accountRepository = Objects.requireNonNull(accountRepository);
         this.categoryRepository = Objects.requireNonNull(categoryRepository);
         this.salaryCycleRepository = Objects.requireNonNull(salaryCycleRepository);
+        this.fundRepository = Objects.requireNonNull(fundRepository);
         this.openSalaryCycleForIncomeService = Objects.requireNonNull(openSalaryCycleForIncomeService);
     }
 
@@ -50,6 +56,7 @@ public class CreateTransactionService {
         validateAccount(command.fromAccountId(), "Source");
         validateAccount(command.toAccountId(), "Destination");
         validateCategory(command.categoryId(), command.transactionType());
+        validateFund(command.fundId());
 
         SalaryCycleId salaryCycleId;
 
@@ -86,15 +93,26 @@ public class CreateTransactionService {
                     command.description()
             );
 
-            case TRANSFER -> Transaction.transfer(
-                    TransactionId.newId(),
-                    command.transactionDate(),
-                    command.amount(),
-                    command.fromAccountId(),
-                    command.toAccountId(),
-                    salaryCycleId,
-                    command.description()
-            );
+            case TRANSFER -> command.fundId() != null
+                    ? Transaction.fundTransfer(
+                            TransactionId.newId(),
+                            command.transactionDate(),
+                            command.amount(),
+                            command.fromAccountId(),
+                            command.toAccountId(),
+                            command.fundId(),
+                            salaryCycleId,
+                            command.description()
+                    )
+                    : Transaction.transfer(
+                            TransactionId.newId(),
+                            command.transactionDate(),
+                            command.amount(),
+                            command.fromAccountId(),
+                            command.toAccountId(),
+                            salaryCycleId,
+                            command.description()
+                    );
 
             case ADJUSTMENT -> Transaction.adjustment(
                     TransactionId.newId(),
@@ -161,6 +179,20 @@ public class CreateTransactionService {
 
         if (transactionType == TransactionType.EXPENSE && !category.isExpense()) {
             throw new TransactionValidationException("Expense transactions require an expense category.");
+        }
+    }
+
+    private void validateFund(FundId fundId) {
+
+        if (fundId == null) {
+            return;
+        }
+
+        Fund fund = fundRepository.findById(fundId)
+                .orElseThrow(() -> new ResourceNotFoundException("Fund not found."));
+
+        if (fund.isInactive()) {
+            throw new TransactionValidationException("Fund is not active.");
         }
     }
 

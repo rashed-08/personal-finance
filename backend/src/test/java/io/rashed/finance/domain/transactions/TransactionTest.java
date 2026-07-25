@@ -6,6 +6,7 @@ import io.rashed.finance.common.enums.TransactionType;
 import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
+import io.rashed.finance.domain.funds.FundId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,7 @@ class TransactionTest {
     private final AccountId otherAccount = AccountId.newId();
     private final CategoryId category = CategoryId.newId();
     private final SalaryCycleId salaryCycle = SalaryCycleId.newId();
+    private final FundId fund = FundId.newId();
 
     // -------------------------------------------------------------------------
     // Expense
@@ -115,6 +117,84 @@ class TransactionTest {
 
         assertThrows(IllegalArgumentException.class, () ->
                 Transaction.transfer(TransactionId.newId(), today, Money.of(1000), account, account, salaryCycle, "x"));
+    }
+
+    // -------------------------------------------------------------------------
+    // Fund Transfer
+    // -------------------------------------------------------------------------
+
+    @Test
+    void fundTransfer_allocationSetsFromAccountAndFund() {
+
+        Transaction allocation = Transaction.fundTransfer(
+                TransactionId.newId(), today, Money.of(1000), account, null, fund, salaryCycle, "Save some");
+
+        assertTrue(allocation.isTransfer());
+        assertTrue(allocation.hasFund());
+        assertEquals(fund, allocation.getFundId());
+        assertEquals(account, allocation.getFromAccountId());
+        assertNull(allocation.getToAccountId());
+    }
+
+    @Test
+    void fundTransfer_withdrawalSetsToAccountAndFund() {
+
+        Transaction withdrawal = Transaction.fundTransfer(
+                TransactionId.newId(), today, Money.of(1000), null, account, fund, salaryCycle, "Use fund");
+
+        assertTrue(withdrawal.hasFund());
+        assertEquals(fund, withdrawal.getFundId());
+        assertEquals(account, withdrawal.getToAccountId());
+        assertNull(withdrawal.getFromAccountId());
+    }
+
+    @Test
+    void fundTransfer_rejectsMissingFund() {
+
+        assertThrows(NullPointerException.class, () ->
+                Transaction.fundTransfer(TransactionId.newId(), today, Money.of(1000), account, null, null, salaryCycle, "x"));
+    }
+
+    @Test
+    void fundTransfer_rejectsBothAccountsSet() {
+
+        assertThrows(IllegalArgumentException.class, () ->
+                Transaction.fundTransfer(TransactionId.newId(), today, Money.of(1000), account, otherAccount, fund, salaryCycle, "x"));
+    }
+
+    @Test
+    void fundTransfer_rejectsNeitherAccountSet() {
+
+        assertThrows(IllegalArgumentException.class, () ->
+                Transaction.fundTransfer(TransactionId.newId(), today, Money.of(1000), null, null, fund, salaryCycle, "x"));
+    }
+
+    @Test
+    void hasFund_isFalseForOrdinaryTransfer() {
+
+        Transaction transfer = Transaction.transfer(
+                TransactionId.newId(), today, Money.of(1000), account, otherAccount, salaryCycle, "ATM");
+
+        assertFalse(transfer.hasFund());
+    }
+
+    @Test
+    void increasesFundBalance_trueForAllocationFalseForWithdrawal() {
+
+        Transaction allocation = Transaction.fundTransfer(
+                TransactionId.newId(), today, Money.of(1000), account, null, fund, salaryCycle, null);
+
+        Transaction withdrawal = Transaction.fundTransfer(
+                TransactionId.newId(), today, Money.of(1000), null, account, fund, salaryCycle, null);
+
+        assertTrue(allocation.increasesFundBalance());
+        assertFalse(withdrawal.increasesFundBalance());
+    }
+
+    @Test
+    void increasesFundBalance_rejectsNonFundTransaction() {
+
+        assertThrows(IllegalStateException.class, () -> anExpense().increasesFundBalance());
     }
 
     // -------------------------------------------------------------------------

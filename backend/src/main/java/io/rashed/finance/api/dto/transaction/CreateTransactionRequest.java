@@ -40,6 +40,13 @@ public record CreateTransactionRequest(
         UUID referenceTransactionId,
 
         /**
+         * TRANSFER only. When set, this is a fund allocation/withdrawal:
+         * exactly one of fromAccountId/toAccountId must also be set (the
+         * real account side), and the fund occupies the other side.
+         */
+        UUID fundId,
+
+        /**
          * INCOME only. When true, the server closes the currently open
          * salary cycle (if any) the day before transactionDate and opens a
          * new one, ignoring salaryCycleId.

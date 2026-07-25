@@ -77,6 +77,9 @@ public class TransactionEntity {
     @Column(name="reference_transaction_id")
     private UUID referenceTransactionId;
 
+    @Column(name = "fund_id")
+    private UUID fundId;
+
     public TransactionEntity(
             UUID id,
             TransactionType transactionType,
@@ -94,6 +97,7 @@ public class TransactionEntity {
             String description,
             String notes,
             UUID referenceTransactionId,
+            UUID fundId,
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
 
@@ -115,5 +119,6 @@ public class TransactionEntity {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.referenceTransactionId = referenceTransactionId;
+        this.fundId = fundId;
     }
 }

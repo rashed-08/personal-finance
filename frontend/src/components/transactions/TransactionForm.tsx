@@ -16,6 +16,7 @@ import type {
     TransactionType,
 } from "../../types/transaction";
 import SalaryCycleSelect from "../salarycycles/SalaryCycleSelect";
+import FundSelect from "../funds/FundSelect";
 
 interface Props {
     transaction?: Transaction;
@@ -23,6 +24,8 @@ interface Props {
 }
 
 type AdjustmentDirection = "increase" | "decrease" | "none";
+type TransferMode = "account" | "fund";
+type FundDirection = "allocate" | "withdraw";
 
 function errorMessage(err: unknown): string {
     const detail = (err as { response?: { data?: { detail?: string } } })
@@ -59,6 +62,10 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
     const [adjustmentAccountId, setAdjustmentAccountId] = useState("");
     const [migrationBatchId, setMigrationBatchId] = useState("");
     const [startsNewSalaryCycle, setStartsNewSalaryCycle] = useState(false);
+    const [transferMode, setTransferMode] = useState<TransferMode>("account");
+    const [fundDirection, setFundDirection] = useState<FundDirection>("allocate");
+    const [fundAccountId, setFundAccountId] = useState("");
+    const [fundId, setFundId] = useState("");
     const [formError, setFormError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -77,6 +84,10 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
             setAdjustmentAccountId("");
             setMigrationBatchId("");
             setStartsNewSalaryCycle(false);
+            setTransferMode("account");
+            setFundDirection("allocate");
+            setFundAccountId("");
+            setFundId("");
             setFormError(null);
             return;
         }
@@ -167,6 +178,48 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
             } else if (adjustmentDirection === "decrease") {
                 request.fromAccountId = adjustmentAccountId;
             }
+        } else if (transactionType === "TRANSFER") {
+            if (transferMode === "fund") {
+                if (!fundAccountId) {
+                    setFormError("Account is required.");
+                    return;
+                }
+                if (!fundId) {
+                    setFormError("Fund is required.");
+                    return;
+                }
+
+                if (fundDirection === "allocate") {
+                    request.fromAccountId = fundAccountId;
+                } else {
+                    request.toAccountId = fundAccountId;
+                }
+                request.fundId = fundId;
+            } else {
+                if (!fromAccountId) {
+                    setFormError("Source account is required.");
+                    return;
+                }
+                if (!toAccountId) {
+                    setFormError("Destination account is required.");
+                    return;
+                }
+                if (fromAccountId === toAccountId) {
+                    setFormError(
+                        "Source and destination account cannot be the same.",
+                    );
+                    return;
+                }
+
+                request.fromAccountId = fromAccountId;
+                request.toAccountId = toAccountId;
+            }
+
+            if (!salaryCycleId) {
+                setFormError("Salary cycle is required.");
+                return;
+            }
+            request.salaryCycleId = salaryCycleId;
         } else {
             if (shape.needsFromAccount && !fromAccountId) {
                 setFormError("Source account is required.");
@@ -174,14 +227,6 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
             }
             if (shape.needsToAccount && !toAccountId) {
                 setFormError("Destination account is required.");
-                return;
-            }
-            if (
-                transactionType === "TRANSFER" &&
-                fromAccountId &&
-                fromAccountId === toAccountId
-            ) {
-                setFormError("Source and destination account cannot be the same.");
                 return;
             }
             if (shape.needsCategory && !categoryId) {
@@ -295,11 +340,10 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
                 </div>
             </div>
 
-            {!isEditing && shape.needsFromAccount && (
+            {!isEditing && shape.needsFromAccount && transactionType !== "TRANSFER" && (
                 <div className="field">
                     <label className="field__label" htmlFor="txn-from-account">
-                        {transactionType === "TRANSFER" ? "From Account" : "Account"}
-                        <span className="field__req">*</span>
+                        Account<span className="field__req">*</span>
                     </label>
                     <select
                         id="txn-from-account"
@@ -317,11 +361,10 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
                 </div>
             )}
 
-            {!isEditing && shape.needsToAccount && (
+            {!isEditing && shape.needsToAccount && transactionType !== "TRANSFER" && (
                 <div className="field">
                     <label className="field__label" htmlFor="txn-to-account">
-                        {transactionType === "TRANSFER" ? "To Account" : "Account"}
-                        <span className="field__req">*</span>
+                        Account<span className="field__req">*</span>
                     </label>
                     <select
                         id="txn-to-account"
@@ -337,6 +380,129 @@ export default function TransactionForm({ transaction, onSuccess }: Props) {
                         ))}
                     </select>
                 </div>
+            )}
+
+            {!isEditing && transactionType === "TRANSFER" && (
+                <>
+                    <div className="field">
+                        <label className="field__label" htmlFor="txn-transfer-mode">
+                            Transfer Target
+                        </label>
+                        <select
+                            id="txn-transfer-mode"
+                            className="select"
+                            value={transferMode}
+                            onChange={(e) =>
+                                setTransferMode(e.target.value as TransferMode)
+                            }
+                        >
+                            <option value="account">Between two accounts</option>
+                            <option value="fund">A fund (allocate or withdraw)</option>
+                        </select>
+                    </div>
+
+                    {transferMode === "account" ? (
+                        <div className="form-row">
+                            <div className="field">
+                                <label className="field__label" htmlFor="txn-from-account">
+                                    From Account<span className="field__req">*</span>
+                                </label>
+                                <select
+                                    id="txn-from-account"
+                                    className="select"
+                                    value={fromAccountId}
+                                    onChange={(e) => setFromAccountId(e.target.value)}
+                                >
+                                    <option value="">Select an account</option>
+                                    {activeAccounts.map((a) => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="field">
+                                <label className="field__label" htmlFor="txn-to-account">
+                                    To Account<span className="field__req">*</span>
+                                </label>
+                                <select
+                                    id="txn-to-account"
+                                    className="select"
+                                    value={toAccountId}
+                                    onChange={(e) => setToAccountId(e.target.value)}
+                                >
+                                    <option value="">Select an account</option>
+                                    {activeAccounts.map((a) => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="form-row">
+                                <div className="field">
+                                    <label
+                                        className="field__label"
+                                        htmlFor="txn-fund-direction"
+                                    >
+                                        Direction
+                                    </label>
+                                    <select
+                                        id="txn-fund-direction"
+                                        className="select"
+                                        value={fundDirection}
+                                        onChange={(e) =>
+                                            setFundDirection(
+                                                e.target.value as FundDirection,
+                                            )
+                                        }
+                                    >
+                                        <option value="allocate">
+                                            Add money to fund
+                                        </option>
+                                        <option value="withdraw">
+                                            Use money from fund
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div className="field">
+                                    <label
+                                        className="field__label"
+                                        htmlFor="txn-fund-account"
+                                    >
+                                        Account<span className="field__req">*</span>
+                                    </label>
+                                    <select
+                                        id="txn-fund-account"
+                                        className="select"
+                                        value={fundAccountId}
+                                        onChange={(e) =>
+                                            setFundAccountId(e.target.value)
+                                        }
+                                    >
+                                        <option value="">Select an account</option>
+                                        {activeAccounts.map((a) => (
+                                            <option key={a.id} value={a.id}>
+                                                {a.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <FundSelect
+                                id="txn-fund"
+                                value={fundId}
+                                onChange={setFundId}
+                            />
+                        </>
+                    )}
+                </>
             )}
 
             {!isEditing && transactionType === "ADJUSTMENT" && (

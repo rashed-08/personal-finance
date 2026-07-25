@@ -18,7 +18,9 @@ Each migration is immutable once it has been executed in a shared environment.
 | V6 | Add missing transactions.reference_transaction_id column |
 | V7 | Fix migration_batch_id/reconciliation_batch_id column types (UUID -> VARCHAR) |
 | V8 | Make salary_cycles.cycle_end_date optional (open-ended cycles) |
-| V9+ | Future schema changes |
+| V9 | Redesign cash reconciliation as cash_reconciliations + cash_snapshots (drops unused cash table) |
+| V10 | Link transactions to funds (fund_id); fix funds.target_amount constraint (>0, not >=0) |
+| V11+ | Future schema changes |
 
 ---
 

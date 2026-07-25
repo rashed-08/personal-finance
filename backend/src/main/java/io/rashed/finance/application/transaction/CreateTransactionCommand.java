@@ -5,6 +5,7 @@ import io.rashed.finance.common.enums.TransactionType;
 import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
+import io.rashed.finance.domain.funds.FundId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.transactions.TransactionId;
 
@@ -39,6 +40,8 @@ public record CreateTransactionCommand(
         AdjustmentReason adjustmentReason,
 
         TransactionId referenceTransactionId,
+
+        FundId fundId,
 
         boolean startsNewSalaryCycle
 

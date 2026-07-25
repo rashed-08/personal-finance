@@ -109,6 +109,20 @@ public final class TransactionSpecification {
 
 
 
+            if (filter.fundId() != null) {
+
+                predicates =
+                        cb.and(
+                                predicates,
+                                cb.equal(
+                                        root.get("fundId"),
+                                        filter.fundId().getValue()
+                                )
+                        );
+            }
+
+
+
             if (filter.accountId() != null) {
 
 

@@ -30,6 +30,7 @@ export interface Transaction {
     salaryCycleId: string | null;
 
     referenceNumber: string | null;
+    fundId: string | null;
     adjustmentReason: AdjustmentReason | null;
 
     description: string | null;
@@ -56,6 +57,13 @@ export interface CreateTransactionRequest {
     migrationBatchId?: string;
     referenceTransactionId?: string;
 
+    /**
+     * TRANSFER only. Turns the transfer into a fund allocation/withdrawal —
+     * exactly one of fromAccountId/toAccountId must also be set. See
+     * docs/api/Fund.md.
+     */
+    fundId?: string;
+
     /** INCOME only. Server resolves salaryCycleId and ignores it when set. */
     startsNewSalaryCycle?: boolean;
 }
@@ -80,6 +88,7 @@ export interface TransactionFilter {
     accountId?: string;
     categoryId?: string;
     salaryCycleId?: string;
+    fundId?: string;
 }
 
 export interface Page<T> {
