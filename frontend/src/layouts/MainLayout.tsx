@@ -31,10 +31,13 @@ export default function MainLayout() {
                         📂 Categories
                     </NavLink>
 
-                    <span className="nav__item nav__item--disabled">
-                        Transactions
-                        <span className="nav__soon">Soon</span>
-                    </span>
+                    <NavLink
+                        to="/transactions"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        🧾 Transactions
+                    </NavLink>
                 </nav>
             </aside>
 

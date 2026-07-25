@@ -6,6 +6,7 @@ import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
+import io.rashed.finance.domain.transactions.TransactionId;
 
 import java.time.LocalDate;
 
@@ -35,7 +36,9 @@ public record CreateTransactionCommand(
 
         String reconciliationBatchId,
 
-        AdjustmentReason adjustmentReason
+        AdjustmentReason adjustmentReason,
+
+        TransactionId referenceTransactionId
 
 ) {
 }

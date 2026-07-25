@@ -2,9 +2,12 @@ package io.rashed.finance.application.salarycycle;
 
 import java.util.Objects;
 
+import org.springframework.stereotype.Service;
+
 import io.rashed.finance.domain.salarycycle.SalaryCycle;
 import io.rashed.finance.domain.salarycycle.SalaryCycleRepository;
 
+@Service
 public class CreateSalaryCycleService {
 
     private final SalaryCycleRepository repository;

@@ -1,5 +1,7 @@
 package io.rashed.finance.api.advice;
 
+import io.rashed.finance.common.exception.ResourceNotFoundException;
+import io.rashed.finance.common.exception.TransactionValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,12 +13,36 @@ import java.time.Instant;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Resource Not Found");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, TransactionValidationException.class})
+    public ProblemDetail handleIllegalArgument(RuntimeException ex) {
 
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
 
         problem.setTitle("Validation Failed");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleIllegalState(IllegalStateException ex) {
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+
+        problem.setTitle("Invalid State Transition");
         problem.setDetail(ex.getMessage());
         problem.setProperty("timestamp", Instant.now());
 

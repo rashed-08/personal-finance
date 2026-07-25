@@ -10,6 +10,8 @@ public enum AdjustmentReason {
 
     MANUAL_CORRECTION,
 
-    SYSTEM_CORRECTION
+    SYSTEM_CORRECTION, 
+
+    TRANSACTION_UPDATE
 
 }

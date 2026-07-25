@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import AccountsPage from "../app/accounts/page";
 import CategoriesPage from "../app/categories/page";
+import TransactionsPage from "../app/transactions/page";
 
 export default function AppRoutes() {
     return (
@@ -21,6 +22,11 @@ export default function AppRoutes() {
                 <Route
                     path="categories"
                     element={<CategoriesPage />}
+                />
+
+                <Route
+                    path="transactions"
+                    element={<TransactionsPage />}
                 />
 
             </Route>
