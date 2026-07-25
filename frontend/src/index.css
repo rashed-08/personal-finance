@@ -441,6 +441,13 @@ a {
 .badge--investment { color: #c11574; }
 .badge--e_wallet { color: #3538cd; }
 
+.badge--txn-income { color: #067647; }
+.badge--txn-expense { color: #d92d20; }
+.badge--txn-transfer { color: #175cd3; }
+.badge--txn-adjustment { color: #b54708; }
+.badge--txn-opening-balance { color: #7839ee; }
+.badge--txn-migration { color: #3538cd; }
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -467,6 +474,20 @@ a {
   color: var(--text-subtle);
   background: var(--surface-2);
 }
+
+.pill--void {
+  color: var(--text-subtle);
+  background: var(--surface-2);
+}
+
+.pill--reversed {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+/* Signed transaction amounts (+ increases, − decreases a balance) */
+.cell-amount--increase { color: var(--success); }
+.cell-amount--decrease { color: var(--danger); }
 
 /* =============================================================================
    States: loading / empty / error
@@ -556,6 +577,25 @@ a {
   border-radius: 14px;
   box-shadow: var(--shadow-lg);
   animation: pop 0.14s ease;
+}
+
+.modal--wide {
+  width: 640px;
+}
+
+.modal--wide .modal__body {
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row > .field {
+  flex: 1;
+  min-width: 0;
 }
 
 .modal__header {
@@ -723,6 +763,85 @@ a {
   justify-content: flex-end;
   gap: 10px;
   padding-top: 4px;
+}
+
+/* =============================================================================
+   Filter bar
+   ========================================================================== */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+
+.filter-bar .field {
+  gap: 4px;
+  min-width: 150px;
+}
+
+.filter-bar .field__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+}
+
+/* =============================================================================
+   Pagination
+   ========================================================================== */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* =============================================================================
+   Inline create panel (e.g. "+ New Salary Cycle" inside a form)
+   ========================================================================== */
+
+.inline-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.inline-panel__row {
+  display: flex;
+  gap: 8px;
+}
+
+.inline-panel__row .input,
+.inline-panel__row .select {
+  flex: 1;
+  min-width: 0;
+}
+
+.inline-panel__actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* =============================================================================
