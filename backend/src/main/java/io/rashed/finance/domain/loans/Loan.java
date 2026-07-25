@@ -24,7 +24,7 @@ public final class Loan {
     private final String name;
 
     /**
-     * GIVEN / RECEIVED
+     * RECEIVABLE / PAYABLE
      */
     private final LoanType loanType;
 
@@ -34,12 +34,17 @@ public final class Loan {
     private final Money principalAmount;
 
     /**
-     * Optional due date.
+     * Date the loan started (disbursed/received).
+     */
+    private final LocalDate startDate;
+
+    /**
+     * Optional target settlement date.
      */
     private final LocalDate dueDate;
 
     /**
-     * ACTIVE / CLOSED / WRITTEN_OFF
+     * ACTIVE / CLOSED / CANCELLED
      */
     private final LoanStatus loanStatus;
 
@@ -57,6 +62,7 @@ public final class Loan {
             String name,
             LoanType loanType,
             Money principalAmount,
+            LocalDate startDate,
             LocalDate dueDate,
             LoanStatus loanStatus,
             String description,
@@ -67,6 +73,7 @@ public final class Loan {
         this.name = Objects.requireNonNull(name).trim();
         this.loanType = Objects.requireNonNull(loanType);
         this.principalAmount = Objects.requireNonNull(principalAmount);
+        this.startDate = Objects.requireNonNull(startDate);
         this.dueDate = dueDate;
         this.loanStatus = Objects.requireNonNull(loanStatus);
         this.description = description;
@@ -78,9 +85,10 @@ public final class Loan {
     // Factory Methods
     // -------------------------------------------------------------------------
 
-    public static Loan given(
+    public static Loan receivable(
             String name,
             Money principalAmount,
+            LocalDate startDate,
             LocalDate dueDate,
             String description
     ) {
@@ -94,8 +102,9 @@ public final class Loan {
         return new Loan(
                 LoanId.newId(),
                 name,
-                LoanType.GIVEN,
+                LoanType.RECEIVABLE,
                 principalAmount,
+                startDate,
                 dueDate,
                 LoanStatus.ACTIVE,
                 description,
@@ -104,9 +113,10 @@ public final class Loan {
         );
     }
 
-    public static Loan received(
+    public static Loan payable(
             String name,
             Money principalAmount,
+            LocalDate startDate,
             LocalDate dueDate,
             String description
     ) {
@@ -120,8 +130,9 @@ public final class Loan {
         return new Loan(
                 LoanId.newId(),
                 name,
-                LoanType.RECEIVED,
+                LoanType.PAYABLE,
                 principalAmount,
+                startDate,
                 dueDate,
                 LoanStatus.ACTIVE,
                 description,
@@ -172,28 +183,24 @@ public final class Loan {
     // Business Methods
     // -------------------------------------------------------------------------
 
-    public boolean isGiven() {
-        return loanType == LoanType.GIVEN;
+    public boolean isReceivable() {
+        return loanType == LoanType.RECEIVABLE;
     }
 
-    public boolean isReceived() {
-        return loanType == LoanType.RECEIVED;
+    public boolean isPayable() {
+        return loanType == LoanType.PAYABLE;
     }
 
     public boolean isActive() {
         return loanStatus == LoanStatus.ACTIVE;
     }
 
-    public boolean isCompleted() {
-        return loanStatus == LoanStatus.COMPLETED;
+    public boolean isClosed() {
+        return loanStatus == LoanStatus.CLOSED;
     }
 
     public boolean isCancelled() {
         return loanStatus == LoanStatus.CANCELLED;
-    }
-
-    public boolean isDefaulted() {
-        return loanStatus == LoanStatus.DEFAULTED;
     }
 
     public boolean hasDueDate() {
@@ -213,6 +220,7 @@ public final class Loan {
                 name,
                 loanType,
                 principalAmount,
+                startDate,
                 dueDate,
                 loanStatus,
                 description,
@@ -228,6 +236,7 @@ public final class Loan {
                 name,
                 loanType,
                 principalAmount,
+                startDate,
                 dueDate,
                 loanStatus,
                 description,
@@ -245,6 +254,7 @@ public final class Loan {
                 name,
                 loanType,
                 principalAmount,
+                startDate,
                 dueDate,
                 loanStatus,
                 description,
@@ -253,21 +263,16 @@ public final class Loan {
         );
     }
 
-    public Loan complete() {
+    /** A loan may only be closed once its outstanding balance is zero. */
+    public Loan close() {
 
-        if (isCompleted()) {
+        if (isClosed()) {
             return this;
         }
 
         if (isCancelled()) {
             throw new IllegalStateException(
-                    "Cancelled loan cannot be completed."
-            );
-        }
-
-        if (isDefaulted()) {
-            throw new IllegalStateException(
-                    "Defaulted loan cannot be completed."
+                    "Cancelled loan cannot be closed."
             );
         }
 
@@ -276,8 +281,9 @@ public final class Loan {
                 name,
                 loanType,
                 principalAmount,
+                startDate,
                 dueDate,
-                LoanStatus.COMPLETED,
+                LoanStatus.CLOSED,
                 description,
                 createdAt,
                 LocalDateTime.now()
@@ -290,15 +296,9 @@ public final class Loan {
             return this;
         }
 
-        if (isCompleted()) {
+        if (isClosed()) {
             throw new IllegalStateException(
-                    "Completed loan cannot be cancelled."
-            );
-        }
-
-        if (isDefaulted()) {
-            throw new IllegalStateException(
-                    "Defaulted loan cannot be cancelled."
+                    "Closed loan cannot be cancelled."
             );
         }
 
@@ -307,33 +307,9 @@ public final class Loan {
                 name,
                 loanType,
                 principalAmount,
+                startDate,
                 dueDate,
                 LoanStatus.CANCELLED,
-                description,
-                createdAt,
-                LocalDateTime.now()
-        );
-    }
-
-    public Loan markAsDefaulted() {
-
-        if (isDefaulted()) {
-            return this;
-        }
-
-        if (isCompleted()) {
-            throw new IllegalStateException(
-                    "Completed loan cannot be defaulted."
-            );
-        }
-
-        return new Loan(
-                id,
-                name,
-                loanType,
-                principalAmount,
-                dueDate,
-                LoanStatus.DEFAULTED,
                 description,
                 createdAt,
                 LocalDateTime.now()

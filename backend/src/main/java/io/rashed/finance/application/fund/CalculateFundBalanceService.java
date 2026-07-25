@@ -31,7 +31,7 @@ public class CalculateFundBalanceService {
         Objects.requireNonNull(fundId, "Fund cannot be null.");
 
         TransactionFilter filter = new TransactionFilter(
-                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, fundId);
+                null, null, TransactionType.TRANSFER, TransactionStatus.POSTED, null, null, null, fundId, null);
 
         Money balance = Money.zero();
 

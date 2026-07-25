@@ -24,7 +24,9 @@ public record TransactionFilterRequest(
 
         UUID salaryCycleId,
 
-        UUID fundId
+        UUID fundId,
+
+        UUID loanId
 
 ) {
 }

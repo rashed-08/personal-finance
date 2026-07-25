@@ -52,6 +52,7 @@ public final class TransactionDtoMapper {
                 transaction.getSalaryCycleId() != null ? transaction.getSalaryCycleId().getValue() : null,
                 transaction.getReferenceNumber(),
                 transaction.getFundId() != null ? transaction.getFundId().getValue() : null,
+                transaction.getLoanId() != null ? transaction.getLoanId().getValue() : null,
                 transaction.getAdjustmentReason(),
                 transaction.getDescription(),
                 transaction.getNotes(),

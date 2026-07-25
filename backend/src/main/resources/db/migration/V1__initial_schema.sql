@@ -205,6 +205,12 @@ EXECUTE FUNCTION update_updated_at_column();
 --   Allocation: from_account_id set, to_account_id null, fund_id set.
 --   Withdrawal: to_account_id set, from_account_id null, fund_id set.
 -- Ordinary transfers are unaffected (fund_id stays null, both accounts set).
+--
+-- loan_id links a TRANSFER to a loan disbursement/receipt or repayment
+-- instead of an ordinary transfer (see docs/database/tables/loans.md and
+-- docs/api/Loan.md), same one-real-account-plus-the-loan shape as fund_id.
+-- A transaction is never linked to both a fund and a loan at once
+-- (chk_transactions_single_link).
 
 CREATE TABLE transactions (
     id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -240,6 +246,8 @@ CREATE TABLE transactions (
     reference_transaction_id    UUID,
 
     fund_id                     UUID,
+
+    loan_id                     UUID,
 
     created_at                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -306,7 +314,19 @@ CREATE TABLE transactions (
                 transaction_type = 'TRANSFER'
                 AND (from_account_id IS NULL) != (to_account_id IS NULL)
             )
-        )
+        ),
+
+    CONSTRAINT chk_transactions_loan_transfer
+        CHECK (
+            loan_id IS NULL
+            OR (
+                transaction_type = 'TRANSFER'
+                AND (from_account_id IS NULL) != (to_account_id IS NULL)
+            )
+        ),
+
+    CONSTRAINT chk_transactions_single_link
+        CHECK (fund_id IS NULL OR loan_id IS NULL)
 );
 
 -- ============================================================================
@@ -433,6 +453,13 @@ ALTER TABLE transactions
 -- Part 4.2
 -- Table: loans
 -- ============================================================================
+--
+-- A loan contains metadata and current status only; principal_amount is the
+-- one exception to "balances are never stored" (docs/database/tables/loans.md
+-- explicitly stores the original amount). Outstanding balance is derived:
+-- principal_amount - total repayments, from loan_id-linked transactions.
+-- There is no separate is_active flag — loan_status alone is the state
+-- machine (ACTIVE / CLOSED / CANCELLED).
 
 CREATE TABLE loans (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -441,17 +468,15 @@ CREATE TABLE loans (
 
     loan_type               VARCHAR(20) NOT NULL,
 
-    original_amount         NUMERIC(18,2) NOT NULL,
+    principal_amount        NUMERIC(18,2) NOT NULL,
 
-    loan_date               DATE NOT NULL,
+    start_date              DATE NOT NULL,
 
-    expected_return_date    DATE,
+    expected_settlement_date DATE,
 
-    status                  VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    loan_status             VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
 
     description             TEXT,
-
-    is_active               BOOLEAN NOT NULL DEFAULT TRUE,
 
     created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -460,31 +485,30 @@ CREATE TABLE loans (
     -- CHECK Constraints
     ------------------------------------------------------------------------
 
-    CONSTRAINT chk_loans_original_amount
-        CHECK (original_amount > 0),
+    CONSTRAINT chk_loans_principal_amount
+        CHECK (principal_amount > 0),
 
     CONSTRAINT chk_loans_type
         CHECK (
             loan_type IN (
-                'GIVEN',
-                'RECEIVED'
+                'RECEIVABLE',
+                'PAYABLE'
             )
         ),
 
     CONSTRAINT chk_loans_status
         CHECK (
-            status IN (
+            loan_status IN (
                 'ACTIVE',
-                'COMPLETED',
-                'CANCELLED',
-                'DEFAULTED'
+                'CLOSED',
+                'CANCELLED'
             )
         ),
 
-    CONSTRAINT chk_loans_expected_return_date
+    CONSTRAINT chk_loans_expected_settlement_date
         CHECK (
-            expected_return_date IS NULL
-            OR expected_return_date >= loan_date
+            expected_settlement_date IS NULL
+            OR expected_settlement_date >= start_date
         )
 );
 
@@ -496,6 +520,13 @@ CREATE TRIGGER trg_loans_updated_at
 BEFORE UPDATE ON loans
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE transactions
+    ADD CONSTRAINT fk_transactions_loan
+        FOREIGN KEY (loan_id)
+        REFERENCES loans(id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT;
 
 -- ============================================================================
 -- Part 4.3
@@ -945,6 +976,9 @@ CREATE INDEX idx_transactions_reference_transaction
 CREATE INDEX idx_transactions_fund
     ON transactions(fund_id);
 
+CREATE INDEX idx_transactions_loan
+    ON transactions(loan_id);
+
 -- Composite indexes
 
 CREATE INDEX idx_transactions_cycle_date
@@ -977,6 +1011,12 @@ CREATE INDEX idx_transactions_fund_date
         transaction_date
     );
 
+CREATE INDEX idx_transactions_loan_date
+    ON transactions (
+        loan_id,
+        transaction_date
+    );
+
 -- ----------------------------------------------------------------------------
 -- Funds
 -- ----------------------------------------------------------------------------
@@ -995,7 +1035,7 @@ CREATE INDEX idx_loans_type
     ON loans(loan_type);
 
 CREATE INDEX idx_loans_status
-    ON loans(status);
+    ON loans(loan_status);
 
 CREATE INDEX idx_loans_person
     ON loans(person_name);

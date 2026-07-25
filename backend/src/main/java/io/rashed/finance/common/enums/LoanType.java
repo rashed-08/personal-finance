@@ -6,13 +6,13 @@ package io.rashed.finance.common.enums;
 public enum LoanType {
 
     /**
-     * Money lent to someone.
+     * Money lent to someone — the borrower owes the user.
      */
-    GIVEN,
+    RECEIVABLE,
 
     /**
-     * Money borrowed from someone.
+     * Money borrowed from someone — the user owes the lender.
      */
-    RECEIVED
+    PAYABLE
 
 }

@@ -4,6 +4,7 @@ package io.rashed.finance.api.dto.transaction;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.funds.FundId;
+import io.rashed.finance.domain.loans.LoanId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.transactions.TransactionFilter;
 
@@ -45,7 +46,11 @@ public final class TransactionFilterMapper {
 
                 request.fundId() == null
                         ? null
-                        : FundId.of(request.fundId())
+                        : FundId.of(request.fundId()),
+
+                request.loanId() == null
+                        ? null
+                        : LoanId.of(request.loanId())
         );
     }
 }

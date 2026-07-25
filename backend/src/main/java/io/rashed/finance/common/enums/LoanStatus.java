@@ -7,10 +7,8 @@ public enum LoanStatus {
 
     ACTIVE,
 
-    COMPLETED,
+    CLOSED,
 
-    CANCELLED,
-
-    DEFAULTED
+    CANCELLED
 
 }

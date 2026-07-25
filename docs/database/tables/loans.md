@@ -65,14 +65,17 @@ id
 | id | UUID | No | Generated | Primary Key |
 | person_name | VARCHAR(150) | No | | Person or organization |
 | loan_type | VARCHAR(20) | No | | RECEIVABLE / PAYABLE |
-| original_amount | NUMERIC(18,2) | No | | Initial loan amount |
-| description | VARCHAR(1000) | Yes | | Notes |
+| principal_amount | NUMERIC(18,2) | No | | Initial loan amount |
+| description | TEXT | Yes | | Notes (domain enforces no explicit max) |
 | start_date | DATE | No | | Loan creation date |
 | expected_settlement_date | DATE | Yes | | Optional target settlement |
-| status | VARCHAR(20) | No | ACTIVE | ACTIVE / CLOSED |
-| is_active | BOOLEAN | No | TRUE | Active flag |
+| loan_status | VARCHAR(20) | No | ACTIVE | ACTIVE / CLOSED / CANCELLED |
 | created_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Creation timestamp |
 | updated_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Last update |
+
+There is no separate `is_active` flag — `loan_status` alone is the state machine.
+
+Also present: `transactions.loan_id` (nullable UUID, FK to `loans.id`) — see [Relationships](#relationships) below.
 
 ---
 
@@ -115,10 +118,9 @@ Future
 - id
 - person_name
 - loan_type
-- original_amount
+- principal_amount
 - start_date
-- status
-- is_active
+- loan_status
 - created_at
 - updated_at
 
@@ -135,16 +137,21 @@ Allowed values
 
 ---
 
-status
+loan_status
 
-Allowed values
+Allowed values (matches `LoanStatus`)
 
 - ACTIVE
 - CLOSED
+- CANCELLED
+
+Future
+
+- OVERDUE
 
 ---
 
-original_amount
+principal_amount
 
 Must be greater than zero.
 
@@ -168,8 +175,7 @@ Secondary
 
 - person_name
 - loan_type
-- status
-- is_active
+- loan_status
 
 ---
 
@@ -192,6 +198,14 @@ Transactions
 
 Repayment History
 ```
+
+A loan disbursement/receipt or repayment/collection is a `TRANSFER`-type transaction where `loan_id` is set
+and exactly one of `from_account_id` / `to_account_id` is also set (`chk_transactions_loan_transfer`):
+
+- Receivable disbursement / Payable repayment (account → loan): `from_account_id` set, `to_account_id` null.
+- Payable receipt / Receivable collection (loan → account): `to_account_id` set, `from_account_id` null.
+
+A transaction is never linked to both a fund and a loan at once (`chk_transactions_single_link`).
 
 ---
 
@@ -225,6 +239,9 @@ Historical loans remain available permanently.
 - Transactions record money movement.
 - A loan may have multiple repayments.
 - Closed loans cannot receive new repayment transactions.
+- A repayment can never exceed the outstanding balance.
+- Outstanding balance can never become negative.
+- A loan may only be closed once its outstanding balance is zero.
 - Historical loan records are immutable.
 - Loans are never physically deleted.
 
@@ -237,7 +254,7 @@ Outstanding balance is calculated.
 Formula
 
 ```
-Original Amount
+Principal Amount
 
 -
 
@@ -248,7 +265,9 @@ Total Repayments
 Outstanding Balance
 ```
 
-No outstanding balance column is stored.
+No outstanding balance column is stored. The disbursement/receipt transaction moves money in the opposite
+direction from repayments/collections, so it is naturally excluded from "Total Repayments" without needing to
+track transaction order.
 
 ---
 

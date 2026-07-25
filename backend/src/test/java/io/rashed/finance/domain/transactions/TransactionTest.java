@@ -7,6 +7,7 @@ import io.rashed.finance.common.valueobject.Money;
 import io.rashed.finance.domain.accounts.AccountId;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.funds.FundId;
+import io.rashed.finance.domain.loans.LoanId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,7 @@ class TransactionTest {
     private final CategoryId category = CategoryId.newId();
     private final SalaryCycleId salaryCycle = SalaryCycleId.newId();
     private final FundId fund = FundId.newId();
+    private final LoanId loan = LoanId.newId();
 
     // -------------------------------------------------------------------------
     // Expense
@@ -195,6 +197,69 @@ class TransactionTest {
     void increasesFundBalance_rejectsNonFundTransaction() {
 
         assertThrows(IllegalStateException.class, () -> anExpense().increasesFundBalance());
+    }
+
+    // -------------------------------------------------------------------------
+    // Loan Transfer
+    // -------------------------------------------------------------------------
+
+    @Test
+    void loanTransfer_disbursementSetsFromAccountAndLoan() {
+
+        Transaction disbursement = Transaction.loanTransfer(
+                TransactionId.newId(), today, Money.of(10000), account, null, loan, salaryCycle, "Loan given");
+
+        assertTrue(disbursement.isTransfer());
+        assertTrue(disbursement.hasLoan());
+        assertEquals(loan, disbursement.getLoanId());
+        assertEquals(account, disbursement.getFromAccountId());
+        assertNull(disbursement.getToAccountId());
+    }
+
+    @Test
+    void loanTransfer_repaymentSetsToAccountAndLoan() {
+
+        Transaction repayment = Transaction.loanTransfer(
+                TransactionId.newId(), today, Money.of(2000), null, account, loan, salaryCycle, "Repayment");
+
+        assertTrue(repayment.hasLoan());
+        assertEquals(loan, repayment.getLoanId());
+        assertEquals(account, repayment.getToAccountId());
+        assertNull(repayment.getFromAccountId());
+    }
+
+    @Test
+    void loanTransfer_rejectsMissingLoan() {
+
+        assertThrows(NullPointerException.class, () ->
+                Transaction.loanTransfer(TransactionId.newId(), today, Money.of(1000), account, null, null, salaryCycle, "x"));
+    }
+
+    @Test
+    void loanTransfer_rejectsBothAccountsSet() {
+
+        assertThrows(IllegalArgumentException.class, () ->
+                Transaction.loanTransfer(TransactionId.newId(), today, Money.of(1000), account, otherAccount, loan, salaryCycle, "x"));
+    }
+
+    @Test
+    void loanTransfer_rejectsNeitherAccountSet() {
+
+        assertThrows(IllegalArgumentException.class, () ->
+                Transaction.loanTransfer(TransactionId.newId(), today, Money.of(1000), null, null, loan, salaryCycle, "x"));
+    }
+
+    @Test
+    void hasLoan_isFalseForOrdinaryTransferAndFundTransfer() {
+
+        Transaction transfer = Transaction.transfer(
+                TransactionId.newId(), today, Money.of(1000), account, otherAccount, salaryCycle, "ATM");
+
+        Transaction fundTransfer = Transaction.fundTransfer(
+                TransactionId.newId(), today, Money.of(1000), account, null, fund, salaryCycle, null);
+
+        assertFalse(transfer.hasLoan());
+        assertFalse(fundTransfer.hasLoan());
     }
 
     // -------------------------------------------------------------------------

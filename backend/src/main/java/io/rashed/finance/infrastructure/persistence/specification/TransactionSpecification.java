@@ -123,6 +123,20 @@ public final class TransactionSpecification {
 
 
 
+            if (filter.loanId() != null) {
+
+                predicates =
+                        cb.and(
+                                predicates,
+                                cb.equal(
+                                        root.get("loanId"),
+                                        filter.loanId().getValue()
+                                )
+                        );
+            }
+
+
+
             if (filter.accountId() != null) {
 
 
