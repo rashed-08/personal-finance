@@ -16,6 +16,12 @@ public interface SalaryCycleRepository {
 
     Optional<SalaryCycle> findByDate(LocalDate date);
 
+    /** The one salary cycle without an end date yet, if any. */
+    Optional<SalaryCycle> findOpen();
+
+    /** The most recent cycle that starts strictly before the given date. */
+    Optional<SalaryCycle> findPrevious(LocalDate beforeStartDate);
+
     List<SalaryCycle> findAll();
 
     boolean existsByName(String name);

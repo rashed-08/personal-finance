@@ -29,7 +29,7 @@ public class SalaryCycleEntity {
     @Column(name = "cycle_start_date", nullable = false)
     private LocalDate cycleStartDate;
 
-    @Column(name = "cycle_end_date", nullable = false)
+    @Column(name = "cycle_end_date")
     private LocalDate cycleEndDate;
 
     @Column(name = "salary_received_date")

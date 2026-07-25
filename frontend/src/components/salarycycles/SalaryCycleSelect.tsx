@@ -26,13 +26,11 @@ export default function SalaryCycleSelect({ id, value, onChange }: Props) {
     const [creating, setCreating] = useState(false);
     const [name, setName] = useState("");
     const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
     const [salaryDate, setSalaryDate] = useState("");
 
     function startCreating() {
         setName("");
         setStartDate("");
-        setEndDate("");
         setSalaryDate("");
         setCreating(true);
     }
@@ -41,7 +39,7 @@ export default function SalaryCycleSelect({ id, value, onChange }: Props) {
         e.preventDefault();
 
         createMutation.mutate(
-            { name: name.trim(), startDate, endDate, salaryDate },
+            { name: name.trim(), startDate, salaryDate },
             {
                 onSuccess: (cycle) => {
                     onChange(cycle.id);
@@ -84,18 +82,15 @@ export default function SalaryCycleSelect({ id, value, onChange }: Props) {
                         <input
                             className="input"
                             type="date"
-                            aria-label="End date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                        />
-                        <input
-                            className="input"
-                            type="date"
                             aria-label="Salary date"
                             value={salaryDate}
                             onChange={(e) => setSalaryDate(e.target.value)}
                         />
                     </div>
+                    <span className="field__hint">
+                        Opens as an ongoing cycle — it closes automatically when the
+                        next salary starts a new one.
+                    </span>
 
                     <div className="inline-panel__actions">
                         <button
@@ -104,7 +99,6 @@ export default function SalaryCycleSelect({ id, value, onChange }: Props) {
                             disabled={
                                 !name.trim() ||
                                 !startDate ||
-                                !endDate ||
                                 !salaryDate ||
                                 createMutation.isPending
                             }
@@ -144,7 +138,7 @@ export default function SalaryCycleSelect({ id, value, onChange }: Props) {
                     </option>
                     {data.map((cycle) => (
                         <option key={cycle.id} value={cycle.id}>
-                            {cycle.name} ({cycle.startDate} – {cycle.endDate})
+                            {cycle.name} ({cycle.startDate} – {cycle.endDate ?? "ongoing"})
                         </option>
                     ))}
                 </select>

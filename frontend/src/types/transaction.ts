@@ -55,6 +55,9 @@ export interface CreateTransactionRequest {
     adjustmentReason?: AdjustmentReason;
     migrationBatchId?: string;
     referenceTransactionId?: string;
+
+    /** INCOME only. Server resolves salaryCycleId and ignores it when set. */
+    startsNewSalaryCycle?: boolean;
 }
 
 /**

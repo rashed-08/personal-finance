@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
+import io.rashed.finance.application.salarycycle.OpenSalaryCycleForIncomeService;
 import io.rashed.finance.common.enums.TransactionType;
 import io.rashed.finance.common.exception.ResourceNotFoundException;
 import io.rashed.finance.common.exception.TransactionValidationException;
@@ -26,17 +27,20 @@ public class CreateTransactionService {
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final SalaryCycleRepository salaryCycleRepository;
+    private final OpenSalaryCycleForIncomeService openSalaryCycleForIncomeService;
 
     public CreateTransactionService(
             TransactionRepository transactionRepository,
             AccountRepository accountRepository,
             CategoryRepository categoryRepository,
-            SalaryCycleRepository salaryCycleRepository
+            SalaryCycleRepository salaryCycleRepository,
+            OpenSalaryCycleForIncomeService openSalaryCycleForIncomeService
     ) {
         this.transactionRepository = Objects.requireNonNull(transactionRepository);
         this.accountRepository = Objects.requireNonNull(accountRepository);
         this.categoryRepository = Objects.requireNonNull(categoryRepository);
         this.salaryCycleRepository = Objects.requireNonNull(salaryCycleRepository);
+        this.openSalaryCycleForIncomeService = Objects.requireNonNull(openSalaryCycleForIncomeService);
     }
 
     public Transaction execute(CreateTransactionCommand command) {
@@ -46,7 +50,15 @@ public class CreateTransactionService {
         validateAccount(command.fromAccountId(), "Source");
         validateAccount(command.toAccountId(), "Destination");
         validateCategory(command.categoryId(), command.transactionType());
-        validateSalaryCycle(command.salaryCycleId());
+
+        SalaryCycleId salaryCycleId;
+
+        if (command.transactionType() == TransactionType.INCOME && command.startsNewSalaryCycle()) {
+            salaryCycleId = openSalaryCycleForIncomeService.execute(command.transactionDate());
+        } else {
+            validateSalaryCycle(command.salaryCycleId());
+            salaryCycleId = command.salaryCycleId();
+        }
 
         if (command.transactionType() == TransactionType.OPENING_BALANCE) {
             validateSingleOpeningBalance(command.toAccountId());
@@ -60,7 +72,7 @@ public class CreateTransactionService {
                     command.amount(),
                     command.fromAccountId(),
                     command.categoryId(),
-                    command.salaryCycleId(),
+                    salaryCycleId,
                     command.description()
             );
 
@@ -70,7 +82,7 @@ public class CreateTransactionService {
                     command.amount(),
                     command.toAccountId(),
                     command.categoryId(),
-                    command.salaryCycleId(),
+                    salaryCycleId,
                     command.description()
             );
 
@@ -80,7 +92,7 @@ public class CreateTransactionService {
                     command.amount(),
                     command.fromAccountId(),
                     command.toAccountId(),
-                    command.salaryCycleId(),
+                    salaryCycleId,
                     command.description()
             );
 

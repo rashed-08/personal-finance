@@ -1,7 +1,7 @@
 package io.rashed.finance.application.transaction;
 
+import io.rashed.finance.application.salarycycle.OpenSalaryCycleForIncomeService;
 import io.rashed.finance.common.enums.AccountType;
-import io.rashed.finance.common.enums.CategoryType;
 import io.rashed.finance.common.enums.TransactionType;
 import io.rashed.finance.common.exception.ResourceNotFoundException;
 import io.rashed.finance.common.exception.TransactionValidationException;
@@ -12,7 +12,6 @@ import io.rashed.finance.domain.accounts.AccountRepository;
 import io.rashed.finance.domain.categories.Category;
 import io.rashed.finance.domain.categories.CategoryId;
 import io.rashed.finance.domain.categories.CategoryRepository;
-import io.rashed.finance.common.valueobject.DateRange;
 import io.rashed.finance.domain.salarycycle.SalaryCycle;
 import io.rashed.finance.domain.salarycycle.SalaryCycleId;
 import io.rashed.finance.domain.salarycycle.SalaryCycleRepository;
@@ -41,6 +40,7 @@ class CreateTransactionServiceTest {
     private AccountRepository accountRepository;
     private CategoryRepository categoryRepository;
     private SalaryCycleRepository salaryCycleRepository;
+    private OpenSalaryCycleForIncomeService openSalaryCycleForIncomeService;
     private CreateTransactionService service;
 
     @BeforeEach
@@ -50,9 +50,11 @@ class CreateTransactionServiceTest {
         accountRepository = mock(AccountRepository.class);
         categoryRepository = mock(CategoryRepository.class);
         salaryCycleRepository = mock(SalaryCycleRepository.class);
+        openSalaryCycleForIncomeService = mock(OpenSalaryCycleForIncomeService.class);
 
         service = new CreateTransactionService(
-                transactionRepository, accountRepository, categoryRepository, salaryCycleRepository);
+                transactionRepository, accountRepository, categoryRepository, salaryCycleRepository,
+                openSalaryCycleForIncomeService);
 
         when(transactionRepository.save(any(Transaction.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -131,6 +133,25 @@ class CreateTransactionServiceTest {
     }
 
     @Test
+    void execute_resolvesSalaryCycleFromAutomationWhenStartsNewSalaryCycleIsSet() {
+
+        givenActiveAccount(accountId);
+        Category income = Category.userIncomeCategory("Salary", null);
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(income));
+
+        SalaryCycleId resolvedId = SalaryCycleId.newId();
+        when(openSalaryCycleForIncomeService.execute(today)).thenReturn(resolvedId);
+
+        CreateTransactionCommand command = new CreateTransactionCommand(
+                TransactionType.INCOME, today, Money.of(80000), "Salary", null,
+                null, accountId, categoryId, null, null, null, null, null, null, true);
+
+        Transaction transaction = service.execute(command);
+
+        assertEquals(resolvedId, transaction.getSalaryCycleId());
+    }
+
+    @Test
     void execute_rejectsSecondOpeningBalanceForSameAccount() {
 
         givenActiveAccount(accountId);
@@ -138,7 +159,7 @@ class CreateTransactionServiceTest {
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 TransactionType.OPENING_BALANCE, today, Money.of(1000), "Opening", null,
-                null, accountId, null, null, null, null, null, null, null);
+                null, accountId, null, null, null, null, null, null, null, false);
 
         assertThrows(TransactionValidationException.class, () -> service.execute(command));
     }
@@ -151,7 +172,7 @@ class CreateTransactionServiceTest {
 
         CreateTransactionCommand command = new CreateTransactionCommand(
                 TransactionType.OPENING_BALANCE, today, Money.of(1000), "Opening", null,
-                null, accountId, null, null, null, null, null, null, null);
+                null, accountId, null, null, null, null, null, null, null, false);
 
         Transaction transaction = service.execute(command);
 
@@ -162,7 +183,7 @@ class CreateTransactionServiceTest {
 
         return new CreateTransactionCommand(
                 TransactionType.EXPENSE, today, Money.of(500), "Groceries", null,
-                accountId, null, categoryId, salaryCycleId, null, null, null, null, null);
+                accountId, null, categoryId, salaryCycleId, null, null, null, null, null, false);
     }
 
     private void givenActiveAccount(AccountId id) {
@@ -206,7 +227,8 @@ class CreateTransactionServiceTest {
 
         SalaryCycle salaryCycle = SalaryCycle.create(
                 "July 2026",
-                DateRange.of(today.withDayOfMonth(1), today.withDayOfMonth(today.lengthOfMonth())),
+                today.withDayOfMonth(1),
+                today.withDayOfMonth(today.lengthOfMonth()),
                 today,
                 null
         );

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import io.rashed.finance.domain.salarycycle.SalaryCycle;
@@ -52,8 +53,21 @@ public class SalaryCycleRepositoryImpl implements SalaryCycleRepository {
     @Override
     public Optional<SalaryCycle> findByDate(LocalDate date) {
 
-        return jpaRepository
-                .findByCycleStartDateLessThanEqualAndCycleEndDateGreaterThanEqual(date, date)
+        return jpaRepository.findContaining(date)
+                .map(SalaryCycleEntityMapper::toDomain);
+    }
+
+    @Override
+    public Optional<SalaryCycle> findOpen() {
+
+        return jpaRepository.findByCycleEndDateIsNull()
+                .map(SalaryCycleEntityMapper::toDomain);
+    }
+
+    @Override
+    public Optional<SalaryCycle> findPrevious(LocalDate beforeStartDate) {
+
+        return jpaRepository.findPrevious(beforeStartDate, PageRequest.of(0, 1))
                 .map(SalaryCycleEntityMapper::toDomain);
     }
 

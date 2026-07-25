@@ -1,7 +1,7 @@
 package io.rashed.finance.api.dto.salarycycle;
 
+import io.rashed.finance.application.salarycycle.CarryForwardResult;
 import io.rashed.finance.application.salarycycle.CreateSalaryCycleCommand;
-import io.rashed.finance.common.valueobject.DateRange;
 import io.rashed.finance.domain.salarycycle.SalaryCycle;
 
 import java.util.List;
@@ -15,7 +15,8 @@ public final class SalaryCycleDtoMapper {
 
         return new CreateSalaryCycleCommand(
                 request.name(),
-                DateRange.of(request.startDate(), request.endDate()),
+                request.startDate(),
+                request.endDate(),
                 request.salaryDate(),
                 request.description()
         );
@@ -26,8 +27,8 @@ public final class SalaryCycleDtoMapper {
         return new SalaryCycleResponse(
                 salaryCycle.getId().getValue(),
                 salaryCycle.getName(),
-                salaryCycle.getPeriod().getStartDate(),
-                salaryCycle.getPeriod().getEndDate(),
+                salaryCycle.getStartDate(),
+                salaryCycle.getEndDate(),
                 salaryCycle.getSalaryDate(),
                 salaryCycle.isClosed(),
                 salaryCycle.getDescription(),
@@ -41,5 +42,17 @@ public final class SalaryCycleDtoMapper {
         return salaryCycles.stream()
                 .map(SalaryCycleDtoMapper::toResponse)
                 .toList();
+    }
+
+    public static CarryForwardResponse toResponse(CarryForwardResult result) {
+
+        return new CarryForwardResponse(
+                result.salaryCycleId().getValue(),
+                result.openingBalance().getAmount(),
+                result.income().getAmount(),
+                result.expenses().getAmount(),
+                result.adjustments().getAmount(),
+                result.closingBalance().getAmount()
+        );
     }
 }

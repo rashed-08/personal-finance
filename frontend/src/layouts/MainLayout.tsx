@@ -38,6 +38,14 @@ export default function MainLayout() {
                         } >
                         🧾 Transactions
                     </NavLink>
+
+                    <NavLink
+                        to="/salary-cycles"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        📅 Salary Cycles
+                    </NavLink>
                 </nav>
             </aside>
 

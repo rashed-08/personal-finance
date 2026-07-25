@@ -26,9 +26,17 @@ public class CreateSalaryCycleService {
             );
         }
 
+        if (command.endDate() == null) {
+            repository.findOpen().ifPresent(open -> {
+                throw new IllegalStateException(
+                        "Another salary cycle is already open: " + open.getName());
+            });
+        }
+
         SalaryCycle salaryCycle = SalaryCycle.create(
                 command.name(),
-                command.period(),
+                command.startDate(),
+                command.endDate(),
                 command.salaryDate(),
                 command.description()
         );
