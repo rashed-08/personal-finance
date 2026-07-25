@@ -443,4 +443,26 @@ public final class Transaction {
 
         throw new IllegalStateException("Transaction has no associated account.");
     }
+
+    /**
+     * This transaction's signed contribution to the given account's balance:
+     * positive if the account received the money, negative if it left the
+     * account. Unlike {@link #increasesBalance()}, this works uniformly
+     * across every transaction type including transfers, since it asks
+     * about one specific account rather than the transaction as a whole.
+     */
+    public Money signedAmountFor(AccountId accountId) {
+
+        Objects.requireNonNull(accountId, "Account cannot be null.");
+
+        if (accountId.equals(toAccountId)) {
+            return amount;
+        }
+
+        if (accountId.equals(fromAccountId)) {
+            return amount.negate();
+        }
+
+        throw new IllegalArgumentException("Transaction does not involve this account.");
+    }
 }

@@ -6,9 +6,13 @@ The Cash Management module supports reconciliation of physical cash with recorde
 
 Users are not expected to record every small cash expense.
 
-Instead, the application periodically reconciles physical cash against calculated cash balance and automatically identifies untracked differences.
+Instead, the application periodically reconciles physical cash against a ledger-derived expected balance and
+automatically identifies untracked differences.
 
 This workflow significantly reduces manual data entry while maintaining accurate financial records.
+
+Reconciliation is scoped to a single account (an account of type `CASH`), not the wallet in general, since the
+application supports more than one cash account.
 
 ---
 
@@ -56,15 +60,15 @@ Cash Spending
 
 ↓
 
-Cash Count
+One or more Cash Counts (Snapshots)
 
 ↓
 
-Reconciliation
+Reconciliation Completed
 
 ↓
 
-Adjustment Transaction
+Adjustment Transaction (if the counts differ from expected)
 ```
 
 ---
@@ -75,17 +79,17 @@ cash_reconciliations
 
 Purpose
 
-Represents one reconciliation session.
+Represents one reconciliation session for a single cash account.
 
 Each reconciliation compares:
 
-Expected Cash
+Expected Cash (derived from the ledger)
 
 vs
 
-Actual Cash
+Actual Cash (the most recently recorded physical count)
 
-and optionally creates adjustment transactions.
+and, if they differ, creates exactly one adjustment transaction.
 
 ---
 
@@ -94,12 +98,14 @@ and optionally creates adjustment transactions.
 | Column | Type | Nullable | Default | Description |
 |---------|------|----------|---------|-------------|
 | id | UUID | No | Generated | Primary Key |
+| account_id | UUID | No | | The cash account being reconciled |
 | reconciliation_date | DATE | No | | Date of reconciliation |
-| expected_cash | NUMERIC(18,2) | No | | Calculated cash |
-| actual_cash | NUMERIC(18,2) | No | | User counted cash |
-| difference_amount | NUMERIC(18,2) | No | | Calculated difference |
+| expected_cash_amount | NUMERIC(18,2) | No | | Ledger-derived balance as of reconciliation_date |
+| actual_cash_amount | NUMERIC(18,2) | Yes | | Most recent snapshot's amount; null until one is recorded |
+| difference_amount | NUMERIC(18,2) | Yes | | actual_cash_amount − expected_cash_amount; null under the same condition |
 | status | VARCHAR(20) | No | PENDING | PENDING / COMPLETED |
-| notes | VARCHAR(1000) | Yes | | User notes |
+| adjustment_transaction_id | UUID | Yes | | The resulting adjustment transaction, if the difference was non-zero |
+| notes | TEXT | Yes | | User notes / classification of the difference |
 | created_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Creation timestamp |
 | updated_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Last update |
 
@@ -115,17 +121,25 @@ UUID
 
 ## Constraints
 
+expected_cash_amount, actual_cash_amount
+
+```
+CHECK (>= 0)
+```
+
 difference_amount
 
 Automatically calculated
 
 ```
-Actual Cash
+Actual Cash Amount
 
 -
 
-Expected Cash
+Expected Cash Amount
 ```
+
+A positive difference means unexpected extra cash was found; a negative difference means cash is missing.
 
 ---
 
@@ -136,14 +150,26 @@ Allowed values
 - PENDING
 - COMPLETED
 
+A reconciliation is created PENDING with `actual_cash_amount` and `difference_amount` both null — expected cash
+is already known (it only depends on the ledger), but there is no physical count yet. Both become required the
+moment the reconciliation transitions to COMPLETED.
+
+---
+
+## Foreign Keys
+
+account_id → accounts(id), `ON DELETE RESTRICT`
+
+adjustment_transaction_id → transactions(id), `ON DELETE SET NULL`
+
 ---
 
 ## Business Rules
 
 - Reconciliation is immutable after completion.
-- A completed reconciliation cannot be edited.
-- Every reconciliation belongs to a specific reporting period.
-- Adjustment transactions are optional.
+- A completed reconciliation cannot be edited or have further cash counts recorded against it.
+- An account may have at most one PENDING reconciliation at a time.
+- Adjustment transactions are created only when the difference is non-zero.
 - Difference may be positive or negative.
 
 ---
@@ -154,9 +180,10 @@ cash_snapshots
 
 Purpose
 
-Stores every physical cash count performed by the user.
+Stores every physical cash count performed during a reconciliation session.
 
-Snapshots preserve historical cash balances.
+Snapshots preserve historical cash counts even after the session completes, and let a user record several counts
+(e.g. morning and evening) before finalizing.
 
 ---
 
@@ -192,6 +219,8 @@ Cash Snapshot
 Historical Counts
 ```
 
+The most recently recorded snapshot's amount becomes the reconciliation's current `actual_cash_amount`.
+
 ---
 
 ## Foreign Key
@@ -200,7 +229,9 @@ reconciliation_id
 
 ↓
 
-cash_reconciliations(id)
+cash_reconciliations(id), `ON DELETE CASCADE`
+
+Snapshots have no meaning independent of their reconciliation, so they are deleted along with it.
 
 ---
 
@@ -214,19 +245,19 @@ Cash Spending
 
 ↓
 
-Periodic Cash Count
+Start Reconciliation (expected cash computed immediately from the ledger)
 
 ↓
 
-Snapshot
+One or more Cash Counts (Snapshots)
 
 ↓
 
-Reconciliation
+Complete Reconciliation
 
 ↓
 
-Optional Adjustment Transaction
+Adjustment Transaction created only if actual ≠ expected
 
 ↓
 
@@ -236,7 +267,10 @@ Completed
 
 # Adjustment Transaction
 
-Version 1 creates a normal transaction when the user approves reconciliation.
+Completing a reconciliation with a non-zero difference creates an `ADJUSTMENT` transaction (not an `EXPENSE`)
+with `adjustment_reason = CASH_RECONCILIATION`, linked back via `adjustment_transaction_id`. Its direction follows
+the same convention as every other adjustment in the ledger: a positive difference (extra cash found) posts to
+the account as `to_account_id`; a negative difference (cash missing) posts as `from_account_id`.
 
 Example
 
@@ -255,15 +289,19 @@ Difference
 
 ↓
 
-Expense Transaction
+ADJUSTMENT Transaction
 
-Category
+Reason
 
-Miscellaneous Adjustment
+CASH_RECONCILIATION
 
 Amount
 
 270
+
+Direction
+
+from_account_id = the reconciled account (missing cash)
 ```
 
 Original transactions remain unchanged.
@@ -296,13 +334,13 @@ Recorded Expenses
 12,000
 ```
 
-Expected Cash
+Expected Cash (derived from the ledger)
 
 ```
 8,000
 ```
 
-Actual Cash
+Actual Cash (counted)
 
 ```
 7,720
@@ -311,7 +349,7 @@ Actual Cash
 Difference
 
 ```
-280
+-280
 ```
 
 ↓
@@ -319,15 +357,19 @@ Difference
 Adjustment Transaction
 
 ```
-Expense
+ADJUSTMENT
 
-Category
+Reason
 
-Miscellaneous Adjustment
+CASH_RECONCILIATION
 
 Amount
 
 280
+
+Direction
+
+from_account_id (missing cash)
 ```
 
 ---
@@ -336,7 +378,6 @@ Amount
 
 Possible additions
 
-- Multiple snapshots per day
 - Photo attachment
 - Receipt attachment
 - Location
@@ -352,8 +393,10 @@ Possible additions
 - Cash differences are discovered during reconciliation.
 - Reconciliation creates adjustment transactions.
 - Financial history is never rewritten.
-- Cash balance is derived from transactions.
-- Physical cash is verified using snapshots.
+- Cash balance (expected_cash_amount) is derived from the ledger, not tracked separately — see
+  `CalculateAccountBalanceService`.
+- Physical cash is verified using one or more snapshots per session.
+- Reconciliation is scoped per cash account.
 
 ---
 
@@ -361,4 +404,5 @@ Possible additions
 
 The Cash Management module provides a practical balance between accounting accuracy and user convenience.
 
-Instead of requiring exhaustive transaction entry, the application allows users to reconcile cash periodically, ensuring reliable financial records while minimizing day-to-day effort.
+Instead of requiring exhaustive transaction entry, the application allows users to reconcile cash periodically,
+ensuring reliable financial records while minimizing day-to-day effort.
