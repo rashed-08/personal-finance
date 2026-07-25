@@ -21,7 +21,12 @@ public final class RecurringTransaction {
     private final RecurringTransactionId id;
 
     /**
-     * Expense / Income
+     * Template name, e.g. "House Rent".
+     */
+    private final String name;
+
+    /**
+     * Expense / Income / Transfer
      */
     private final TransactionType transactionType;
 
@@ -36,17 +41,17 @@ public final class RecurringTransaction {
     private final Money amount;
 
     /**
-     * Source account (expense).
+     * Source account (expense, transfer).
      */
     private final AccountId fromAccountId;
 
     /**
-     * Destination account (income).
+     * Destination account (income, transfer).
      */
     private final AccountId toAccountId;
 
     /**
-     * Expense/Income category.
+     * Expense/Income category. Never set for TRANSFER.
      */
     private final CategoryId categoryId;
 
@@ -61,7 +66,26 @@ public final class RecurringTransaction {
     private final LocalDate endDate;
 
     /**
-     * Whether scheduler should execute it.
+     * The next date this template is due. Starts equal to startDate and
+     * advances by frequency each time an occurrence is executed or skipped.
+     */
+    private final LocalDate nextExecutionDate;
+
+    /**
+     * The scheduled date of the most recent successfully generated
+     * occurrence. Null until the first execution.
+     */
+    private final LocalDate lastExecutionDate;
+
+    /**
+     * Whether due occurrences generate a transaction automatically
+     * (RunDueRecurringTransactionsService) or require the user to confirm
+     * each one explicitly.
+     */
+    private final boolean autoGenerate;
+
+    /**
+     * Whether scheduler should consider it at all.
      */
     private final boolean active;
 
@@ -70,12 +94,18 @@ public final class RecurringTransaction {
      */
     private final String description;
 
+    /**
+     * Optional notes.
+     */
+    private final String notes;
+
     private final LocalDateTime createdAt;
 
     private final LocalDateTime updatedAt;
 
     public RecurringTransaction(
             RecurringTransactionId id,
+            String name,
             TransactionType transactionType,
             Frequency frequency,
             Money amount,
@@ -84,13 +114,18 @@ public final class RecurringTransaction {
             CategoryId categoryId,
             LocalDate startDate,
             LocalDate endDate,
+            LocalDate nextExecutionDate,
+            LocalDate lastExecutionDate,
+            boolean autoGenerate,
             boolean active,
             String description,
+            String notes,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
 
         this.id = Objects.requireNonNull(id);
+        this.name = Objects.requireNonNull(name).trim();
         this.transactionType = Objects.requireNonNull(transactionType);
         this.frequency = Objects.requireNonNull(frequency);
         this.amount = Objects.requireNonNull(amount);
@@ -101,9 +136,13 @@ public final class RecurringTransaction {
 
         this.startDate = Objects.requireNonNull(startDate);
         this.endDate = endDate;
+        this.nextExecutionDate = Objects.requireNonNull(nextExecutionDate);
+        this.lastExecutionDate = lastExecutionDate;
 
+        this.autoGenerate = autoGenerate;
         this.active = active;
         this.description = description == null ? null : description.trim();
+        this.notes = notes == null ? null : notes.trim();
 
         this.createdAt = Objects.requireNonNull(createdAt);
         this.updatedAt = Objects.requireNonNull(updatedAt);
@@ -114,15 +153,19 @@ public final class RecurringTransaction {
     // -------------------------------------------------------------------------
 
     public static RecurringTransaction expense(
+            String name,
             AccountId fromAccountId,
             CategoryId categoryId,
             Money amount,
             Frequency frequency,
             LocalDate startDate,
             LocalDate endDate,
-            String description
+            boolean autoGenerate,
+            String description,
+            String notes
     ) {
 
+        validateName(name);
         validateAmount(amount);
         validateExpense(fromAccountId, categoryId);
         validateFrequency(frequency);
@@ -133,6 +176,7 @@ public final class RecurringTransaction {
 
         return new RecurringTransaction(
                 RecurringTransactionId.newId(),
+                name,
                 TransactionType.EXPENSE,
                 frequency,
                 amount,
@@ -141,23 +185,31 @@ public final class RecurringTransaction {
                 categoryId,
                 startDate,
                 endDate,
+                startDate,
+                null,
+                autoGenerate,
                 true,
                 description,
+                notes,
                 now,
                 now
         );
     }
 
     public static RecurringTransaction income(
+            String name,
             AccountId toAccountId,
             CategoryId categoryId,
             Money amount,
             Frequency frequency,
             LocalDate startDate,
             LocalDate endDate,
-            String description
+            boolean autoGenerate,
+            String description,
+            String notes
     ) {
 
+        validateName(name);
         validateAmount(amount);
         validateIncome(toAccountId, categoryId);
         validateFrequency(frequency);
@@ -168,6 +220,7 @@ public final class RecurringTransaction {
 
         return new RecurringTransaction(
                 RecurringTransactionId.newId(),
+                name,
                 TransactionType.INCOME,
                 frequency,
                 amount,
@@ -176,18 +229,77 @@ public final class RecurringTransaction {
                 categoryId,
                 startDate,
                 endDate,
+                startDate,
+                null,
+                autoGenerate,
                 true,
                 description,
+                notes,
                 now,
                 now
         );
     }
 
-    
+    public static RecurringTransaction transfer(
+            String name,
+            AccountId fromAccountId,
+            AccountId toAccountId,
+            Money amount,
+            Frequency frequency,
+            LocalDate startDate,
+            LocalDate endDate,
+            boolean autoGenerate,
+            String description,
+            String notes
+    ) {
+
+        validateName(name);
+        validateAmount(amount);
+        validateTransfer(fromAccountId, toAccountId);
+        validateFrequency(frequency);
+        validateStartDate(startDate);
+        validateDateRange(startDate, endDate);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        return new RecurringTransaction(
+                RecurringTransactionId.newId(),
+                name,
+                TransactionType.TRANSFER,
+                frequency,
+                amount,
+                fromAccountId,
+                toAccountId,
+                null,
+                startDate,
+                endDate,
+                startDate,
+                null,
+                autoGenerate,
+                true,
+                description,
+                notes,
+                now,
+                now
+        );
+    }
 
     // -------------------------------------------------------------------------
     // Validation
     // -------------------------------------------------------------------------
+
+    private static void validateName(String name) {
+
+        Objects.requireNonNull(name, "Name cannot be null.");
+
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("Name cannot be empty.");
+        }
+
+        if (name.length() > 100) {
+            throw new IllegalArgumentException("Name cannot exceed 100 characters.");
+        }
+    }
 
     private static void validateAmount(Money amount) {
 
@@ -228,6 +340,17 @@ public final class RecurringTransaction {
         );
     }
 
+    private static void validateTransfer(AccountId fromAccountId, AccountId toAccountId) {
+
+        Objects.requireNonNull(fromAccountId, "Transfer requires a source account.");
+
+        Objects.requireNonNull(toAccountId, "Transfer requires a destination account.");
+
+        if (fromAccountId.equals(toAccountId)) {
+            throw new IllegalArgumentException("Source and destination accounts cannot be the same.");
+        }
+    }
+
     private static void validateFrequency(Frequency frequency) {
 
         Objects.requireNonNull(
@@ -266,6 +389,10 @@ public final class RecurringTransaction {
         return transactionType == TransactionType.INCOME;
     }
 
+    public boolean isTransfer() {
+        return transactionType == TransactionType.TRANSFER;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -278,6 +405,26 @@ public final class RecurringTransaction {
         return description != null && !description.isBlank();
     }
 
+    public boolean hasLastExecutionDate() {
+        return lastExecutionDate != null;
+    }
+
+    /** Whether nextExecutionDate has arrived (inclusive) as of the given date. */
+    public boolean isDue(LocalDate asOfDate) {
+
+        Objects.requireNonNull(asOfDate, "Date cannot be null.");
+
+        if (!active) {
+            return false;
+        }
+
+        if (hasEndDate() && nextExecutionDate.isAfter(endDate)) {
+            return false;
+        }
+
+        return !nextExecutionDate.isAfter(asOfDate);
+    }
+
     public RecurringTransaction activate() {
 
         if (active) {
@@ -285,19 +432,9 @@ public final class RecurringTransaction {
         }
 
         return new RecurringTransaction(
-                id,
-                transactionType,
-                frequency,
-                amount,
-                fromAccountId,
-                toAccountId,
-                categoryId,
-                startDate,
-                endDate,
-                true,
-                description,
-                createdAt,
-                LocalDateTime.now()
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, true,
+                description, notes, createdAt, LocalDateTime.now()
         );
     }
 
@@ -308,19 +445,20 @@ public final class RecurringTransaction {
         }
 
         return new RecurringTransaction(
-                id,
-                transactionType,
-                frequency,
-                amount,
-                fromAccountId,
-                toAccountId,
-                categoryId,
-                startDate,
-                endDate,
-                false,
-                description,
-                createdAt,
-                LocalDateTime.now()
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, false,
+                description, notes, createdAt, LocalDateTime.now()
+        );
+    }
+
+    public RecurringTransaction rename(String name) {
+
+        validateName(name);
+
+        return new RecurringTransaction(
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
         );
     }
 
@@ -329,19 +467,9 @@ public final class RecurringTransaction {
         validateAmount(amount);
 
         return new RecurringTransaction(
-                id,
-                transactionType,
-                frequency,
-                amount,
-                fromAccountId,
-                toAccountId,
-                categoryId,
-                startDate,
-                endDate,
-                active,
-                description,
-                createdAt,
-                LocalDateTime.now()
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
         );
     }
 
@@ -350,19 +478,9 @@ public final class RecurringTransaction {
         validateFrequency(frequency);
 
         return new RecurringTransaction(
-                id,
-                transactionType,
-                frequency,
-                amount,
-                fromAccountId,
-                toAccountId,
-                categoryId,
-                startDate,
-                endDate,
-                active,
-                description,
-                createdAt,
-                LocalDateTime.now()
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
         );
     }
 
@@ -373,38 +491,64 @@ public final class RecurringTransaction {
         validateDateRange(startDate, endDate);
 
         return new RecurringTransaction(
-                id,
-                transactionType,
-                frequency,
-                amount,
-                fromAccountId,
-                toAccountId,
-                categoryId,
-                startDate,
-                endDate,
-                active,
-                description,
-                createdAt,
-                LocalDateTime.now()
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
         );
     }
 
     public RecurringTransaction changeDescription(String description) {
 
         return new RecurringTransaction(
-                id,
-                transactionType,
-                frequency,
-                amount,
-                fromAccountId,
-                toAccountId,
-                categoryId,
-                startDate,
-                endDate,
-                active,
-                description,
-                createdAt,
-                LocalDateTime.now()
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
+        );
+    }
+
+    public RecurringTransaction changeNotes(String notes) {
+
+        return new RecurringTransaction(
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
+        );
+    }
+
+    public RecurringTransaction changeAutoGenerate(boolean autoGenerate) {
+
+        return new RecurringTransaction(
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, nextExecutionDate, lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
+        );
+    }
+
+    /**
+     * Records a successful generation of the currently-due occurrence and
+     * advances the schedule from that occurrence's date (not "today"), so
+     * the schedule stays anchored even if the run happens late.
+     */
+    public RecurringTransaction markExecuted() {
+
+        return new RecurringTransaction(
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, frequency.advance(nextExecutionDate), nextExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
+        );
+    }
+
+    /**
+     * Advances the schedule past a due occurrence that could not be
+     * generated (e.g. no open salary cycle), without recording it as the
+     * last successful execution.
+     */
+    public RecurringTransaction markSkipped() {
+
+        return new RecurringTransaction(
+                id, name, transactionType, frequency, amount, fromAccountId, toAccountId, categoryId,
+                startDate, endDate, frequency.advance(nextExecutionDate), lastExecutionDate, autoGenerate, active,
+                description, notes, createdAt, LocalDateTime.now()
         );
     }
 }

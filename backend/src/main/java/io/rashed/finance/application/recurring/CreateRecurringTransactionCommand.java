@@ -10,6 +10,8 @@ import java.time.LocalDate;
 
 public record CreateRecurringTransactionCommand(
 
+        String name,
+
         TransactionType transactionType,
 
         AccountId fromAccountId,
@@ -26,6 +28,10 @@ public record CreateRecurringTransactionCommand(
 
         LocalDate endDate,
 
-        String description
+        boolean autoGenerate,
+
+        String description,
+
+        String notes
 ) {
 }

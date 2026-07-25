@@ -76,20 +76,29 @@ id
 |---------|------|----------|---------|-------------|
 | id | UUID | No | Generated | Primary Key |
 | name | VARCHAR(100) | No | | Template name |
-| transaction_type | VARCHAR(30) | No | | EXPENSE / INCOME |
-| account_id | UUID | No | | Default account |
-| category_id | UUID | No | | Default category |
-| amount | NUMERIC(18,2) | No | | Default amount |
-| frequency | VARCHAR(20) | No | MONTHLY | DAILY / WEEKLY / MONTHLY / YEARLY |
-| interval_value | INTEGER | No | 1 | Repeat interval |
-| start_date | DATE | No | | Schedule starts |
+| transaction_type | VARCHAR(30) | No | | EXPENSE / INCOME / TRANSFER |
+| from_account_id | UUID | Conditional | | Source account (EXPENSE, TRANSFER) |
+| to_account_id | UUID | Conditional | | Destination account (INCOME, TRANSFER) |
+| category_id | UUID | Conditional | | Required for EXPENSE/INCOME, null for TRANSFER |
+| amount | NUMERIC(18,2) | No | | Amount per occurrence |
+| description | VARCHAR(255) | Yes | | Optional label |
+| notes | TEXT | Yes | | Optional notes |
+| frequency | VARCHAR(20) | No | | DAILY / WEEKLY / MONTHLY / YEARLY |
+| start_date | DATE | No | | Schedule starts; also the first occurrence's date |
 | end_date | DATE | Yes | | Optional end |
-| next_execution_date | DATE | No | | Next scheduled run |
-| auto_generate | BOOLEAN | No | FALSE | Auto-create transaction |
+| next_execution_date | DATE | No | | Next scheduled occurrence |
+| last_execution_date | DATE | Yes | | Scheduled date of the most recent successful generation |
+| auto_generate | BOOLEAN | No | FALSE | Generate due occurrences automatically vs. require manual confirmation |
 | is_active | BOOLEAN | No | TRUE | Template active |
-| notes | VARCHAR(1000) | Yes | | Optional notes |
 | created_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Creation timestamp |
 | updated_at | TIMESTAMP | No | CURRENT_TIMESTAMP | Last update |
+
+There is no `interval_value` (repeat-every-N) or per-template salary cycle column: the salary cycle for a
+generated transaction is always resolved to whichever cycle is open at generation time, never stored on the
+template. See [Future Enhancements](#future-enhancements) for custom intervals.
+
+Also present: `recurring_transaction_executions`, a separate append-only log table — see
+[Execution History](#execution-history) below.
 
 ---
 
@@ -103,7 +112,7 @@ UUID
 
 # Foreign Keys
 
-account_id
+from_account_id / to_account_id
 
 ↓
 
@@ -124,17 +133,17 @@ categories(id)
 - id
 - name
 - transaction_type
-- account_id
-- category_id
 - amount
 - frequency
-- interval_value
 - start_date
 - next_execution_date
 - auto_generate
 - is_active
 - created_at
 - updated_at
+
+`from_account_id`/`to_account_id`/`category_id` are conditionally required depending on `transaction_type`, same
+as the `transactions` table itself.
 
 ---
 
@@ -146,6 +155,7 @@ Allowed values
 
 - INCOME
 - EXPENSE
+- TRANSFER
 
 ---
 
@@ -161,12 +171,6 @@ Allowed values
 ---
 
 amount
-
-Must be greater than zero.
-
----
-
-interval_value
 
 Must be greater than zero.
 
@@ -200,31 +204,60 @@ The generated transaction has no dependency on the template after creation.
 
 ---
 
+# Execution History
+
+Every due occurrence a scheduler run looks at is recorded in `recurring_transaction_executions` — one row per
+occurrence, whether it produced a transaction or not:
+
+| Column | Type | Description |
+|--------|------|--------------|
+| id | UUID | Primary Key |
+| recurring_transaction_id | UUID | FK to `recurring_transactions.id` |
+| scheduled_date | DATE | The occurrence's scheduled date (not when the run happened) |
+| status | VARCHAR(20) | `GENERATED` / `SKIPPED` |
+| transaction_id | UUID | Set only when `status = GENERATED`; FK to `transactions.id` |
+| reason | VARCHAR(500) | Set only when `status = SKIPPED` (e.g. "No salary cycle is currently open") |
+| created_at | TIMESTAMP | When this row was written |
+
+This satisfies "Missed Scheduled Transactions" reporting (see [Reporting Usage](#reporting-usage)) and gives
+"history is maintained" a concrete, queryable answer.
+
+---
+
 # Lifecycle
 
-Create
+Create (active, `next_execution_date` = `start_date`)
 
 ↓
 
-Activate
+Due (`next_execution_date <= today`)
 
 ↓
 
-Generate Transactions
+Generate — on-demand, not a background job (see below)
 
 ↓
 
-Update Next Execution
+Schedule advances from the occurrence's own scheduled date, recorded as GENERATED or SKIPPED
 
 ↓
 
-Deactivate
+Deactivate (stops future generation only) / Delete
 
-↓
+Generated transactions remain unchanged after creation, and are unaffected by later changes to the template.
 
-Archive
+## Generation triggers
 
-Generated transactions remain unchanged.
+Version 1 has no background scheduler. Two on-demand triggers exist instead:
+
+- **Run due transactions** — processes every `auto_generate = TRUE` template whose `next_execution_date` has
+  arrived, catching up *all* missed occurrences in one call (not just one), so the schedule stays correct even
+  if the app wasn't opened on the exact due date.
+- **Generate now** (per template) — the manual-confirmation path for `auto_generate = FALSE` templates (or to
+  force an occurrence early). Generates exactly the next due occurrence.
+
+Both paths resolve the generated transaction's salary cycle to whichever cycle is open at generation time, and
+both record the outcome in `recurring_transaction_executions`.
 
 ---
 
@@ -235,6 +268,11 @@ Generated transactions remain unchanged.
 - Users may manually edit generated transactions.
 - Editing a generated transaction does not modify the template.
 - Disabling a template stops future generation only.
+- A transaction type, its accounts, and its category are fixed at creation — only scheduling/metadata can
+  change afterward.
+- If a due occurrence cannot be generated (no open salary cycle, an account was deactivated, etc.), it is
+  recorded as `SKIPPED` with a reason, and the schedule still advances to the next occurrence rather than
+  retrying the same date indefinitely.
 
 ---
 
@@ -282,6 +320,8 @@ Used in
 
 Possible additions
 
+- Custom repeat interval (e.g. every 2 weeks), previously drafted as an `interval_value` column
+- A background scheduler, rather than the current on-demand triggers
 - Reminder Before Due Date
 - Notification
 - Percentage-based Amount

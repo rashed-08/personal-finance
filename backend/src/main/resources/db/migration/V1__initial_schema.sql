@@ -637,8 +637,19 @@ ALTER TABLE cash_snapshots
 
 -- ============================================================================
 -- Part 4.4
--- Table: recurring_transactions
+-- Tables: recurring_transactions, recurring_transaction_executions
 -- ============================================================================
+--
+-- next_execution_date/last_execution_date anchor the schedule on the
+-- occurrence's own scheduled date, not on whenever the runner actually
+-- executes — see RecurringTransaction.markExecuted()/markSkipped(). Every
+-- occurrence, generated or skipped, is recorded in
+-- recurring_transaction_executions for history/reporting (e.g. "missed
+-- scheduled transactions"). auto_generate distinguishes templates whose due
+-- occurrences generate automatically from ones that require the user to
+-- confirm each occurrence explicitly (docs/database/tables/recurring_transactions.md).
+-- The salary cycle for a generated transaction is always resolved to
+-- whichever cycle is open at generation time — never stored on the template.
 
 CREATE TABLE recurring_transactions (
     id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -659,8 +670,6 @@ CREATE TABLE recurring_transactions (
 
     category_id                 UUID,
 
-    salary_cycle_enabled        BOOLEAN NOT NULL DEFAULT TRUE,
-
     frequency                   VARCHAR(20) NOT NULL,
 
     start_date                  DATE NOT NULL,
@@ -670,6 +679,8 @@ CREATE TABLE recurring_transactions (
     next_execution_date         DATE NOT NULL,
 
     last_execution_date         DATE,
+
+    auto_generate               BOOLEAN NOT NULL DEFAULT FALSE,
 
     is_active                   BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -740,6 +751,60 @@ ALTER TABLE recurring_transactions
     ADD CONSTRAINT fk_recurring_category
         FOREIGN KEY (category_id)
         REFERENCES categories(id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT;
+
+-- ----------------------------------------------------------------------------
+-- Table: recurring_transaction_executions
+-- ----------------------------------------------------------------------------
+--
+-- One row per due occurrence the runner ever looked at, whether it produced
+-- a transaction or not. transaction_id is set only when status = GENERATED.
+
+CREATE TABLE recurring_transaction_executions (
+    id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    recurring_transaction_id    UUID NOT NULL,
+
+    scheduled_date              DATE NOT NULL,
+
+    status                      VARCHAR(20) NOT NULL,
+
+    transaction_id              UUID,
+
+    reason                      VARCHAR(500),
+
+    created_at                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    ------------------------------------------------------------------------
+    -- CHECK Constraints
+    ------------------------------------------------------------------------
+
+    CONSTRAINT chk_recurring_executions_status
+        CHECK (
+            status IN (
+                'GENERATED',
+                'SKIPPED'
+            )
+        ),
+
+    CONSTRAINT chk_recurring_executions_generated_has_transaction
+        CHECK (
+            (status = 'GENERATED') = (transaction_id IS NOT NULL)
+        )
+);
+
+ALTER TABLE recurring_transaction_executions
+    ADD CONSTRAINT fk_recurring_executions_template
+        FOREIGN KEY (recurring_transaction_id)
+        REFERENCES recurring_transactions(id)
+        ON UPDATE RESTRICT
+        ON DELETE RESTRICT;
+
+ALTER TABLE recurring_transaction_executions
+    ADD CONSTRAINT fk_recurring_executions_transaction
+        FOREIGN KEY (transaction_id)
+        REFERENCES transactions(id)
         ON UPDATE RESTRICT
         ON DELETE RESTRICT;
 
@@ -1068,6 +1133,19 @@ CREATE INDEX idx_recurring_frequency
 
 CREATE INDEX idx_recurring_active
     ON recurring_transactions(is_active);
+
+-- ----------------------------------------------------------------------------
+-- Recurring Transaction Executions
+-- ----------------------------------------------------------------------------
+
+CREATE INDEX idx_recurring_executions_template
+    ON recurring_transaction_executions(recurring_transaction_id);
+
+CREATE INDEX idx_recurring_executions_scheduled_date
+    ON recurring_transaction_executions(scheduled_date);
+
+CREATE INDEX idx_recurring_executions_status
+    ON recurring_transaction_executions(status);
 
 -- ----------------------------------------------------------------------------
 -- Settings
