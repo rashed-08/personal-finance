@@ -23,3 +23,7 @@ app:
       issuer: personal-finance
       access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
       refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:14d}
+    google:
+      # OAuth 2.0 Web client ID from Google Cloud Console.
+      # Google Sign-In is disabled while this is blank.
+      client-id: ${GOOGLE_CLIENT_ID:}
