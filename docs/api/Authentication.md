@@ -48,6 +48,7 @@ JWT claims: `sub` (user id), `email`, `role`, `iss` (`personal-finance`), `iat`,
 |--------|------|------|---------|
 | POST | `/api/auth/register` | none | Create an account, returns tokens (auto-login) |
 | POST | `/api/auth/login` | none | Email/password login |
+| POST | `/api/auth/google` | none | Sign in with a Google ID token |
 | POST | `/api/auth/refresh` | refresh cookie | Rotate refresh token, new access token |
 | POST | `/api/auth/logout` | refresh cookie | Revoke the session, clear the cookie |
 | GET | `/api/users/me` | Bearer | Current user profile |
@@ -127,6 +128,40 @@ Same shape as `/register` (body + refresh cookie).
 
 ---
 
+# POST /api/auth/google
+
+Signs in with Google. The frontend obtains an **ID token** from Google Identity Services and posts it here;
+the backend verifies it against Google's public keys and the configured client ID (audience).
+
+Account resolution, in order:
+
+1. A user already linked to this Google subject → sign in.
+2. A user with the same email (which Google has verified) → the Google identity is linked to that account;
+   an existing local password keeps working.
+3. Otherwise a new user is registered (`provider = GOOGLE`, no local password, email pre-verified).
+
+## Request Body
+
+```json
+{
+  "idToken": "eyJhbGciOiJSUzI1NiIs..."
+}
+```
+
+## Response — 200 OK
+
+Same shape as `/login` (body + refresh cookie).
+
+## Errors
+
+| Status | Cause |
+|--------|-------|
+| 400 | Missing `idToken` |
+| 401 | Token invalid/expired/wrong audience, or Google reports the email as unverified |
+| 409 | `GOOGLE_CLIENT_ID` is not configured on the server |
+
+---
+
 # POST /api/auth/refresh
 
 Reads the `refresh_token` cookie. No request body.
@@ -189,11 +224,11 @@ Requires `Authorization: Bearer <accessToken>`.
 | `app.security.jwt.access-token-ttl` | `JWT_ACCESS_TOKEN_TTL` | `15m` | Access token lifetime |
 | `app.security.jwt.refresh-token-ttl` | `JWT_REFRESH_TOKEN_TTL` | `14d` | Refresh token lifetime |
 | `app.security.cookie-secure` | `COOKIE_SECURE` | `false` | Mark refresh cookie `Secure` (enable behind HTTPS) |
+| `app.security.google.client-id` | `GOOGLE_CLIENT_ID` | — (feature disabled when blank) | Google OAuth Web client ID (ID-token audience) |
 
 ---
 
 # Future (tracked in the auth epic #11)
 
-- `POST /api/auth/google` — Google Sign-In (#32)
 - Email verification, forgot/reset/change password (#33)
-- Frontend integration (#34)
+- Frontend integration, including the Google Sign-In button (#34)

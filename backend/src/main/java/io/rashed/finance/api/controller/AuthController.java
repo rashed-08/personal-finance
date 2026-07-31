@@ -2,9 +2,11 @@ package io.rashed.finance.api.controller;
 
 import io.rashed.finance.api.dto.auth.AuthDtoMapper;
 import io.rashed.finance.api.dto.auth.AuthResponse;
+import io.rashed.finance.api.dto.auth.GoogleSignInRequest;
 import io.rashed.finance.api.dto.auth.LoginRequest;
 import io.rashed.finance.api.dto.auth.RegisterRequest;
 import io.rashed.finance.application.auth.AuthResult;
+import io.rashed.finance.application.auth.GoogleSignInService;
 import io.rashed.finance.application.auth.LoginService;
 import io.rashed.finance.application.auth.LogoutService;
 import io.rashed.finance.application.auth.RefreshTokenService;
@@ -36,6 +38,7 @@ public class AuthController {
 
     private final RegisterUserService registerUserService;
     private final LoginService loginService;
+    private final GoogleSignInService googleSignInService;
     private final RefreshTokenService refreshTokenService;
     private final LogoutService logoutService;
     private final boolean cookieSecure;
@@ -43,12 +46,14 @@ public class AuthController {
     public AuthController(
             RegisterUserService registerUserService,
             LoginService loginService,
+            GoogleSignInService googleSignInService,
             RefreshTokenService refreshTokenService,
             LogoutService logoutService,
             @Value("${app.security.cookie-secure:false}") boolean cookieSecure
     ) {
         this.registerUserService = registerUserService;
         this.loginService = loginService;
+        this.googleSignInService = googleSignInService;
         this.refreshTokenService = refreshTokenService;
         this.logoutService = logoutService;
         this.cookieSecure = cookieSecure;
@@ -74,6 +79,16 @@ public class AuthController {
         AuthResult result = loginService.execute(
                 AuthDtoMapper.toCommand(request)
         );
+
+        return withRefreshCookie(HttpStatus.OK, result);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleSignIn(
+            @Valid @RequestBody GoogleSignInRequest request
+    ) {
+
+        AuthResult result = googleSignInService.execute(request.idToken());
 
         return withRefreshCookie(HttpStatus.OK, result);
     }
