@@ -13,6 +13,12 @@ server:
   port: 8080
 
 app:
+  # Base URL used in emailed links (verification, password reset).
+  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
+  mail:
+    from: ${MAIL_FROM:noreply@personal-finance.local}
+
   security:
     # Set to true behind HTTPS in production.
     cookie-secure: ${COOKIE_SECURE:false}
@@ -27,3 +33,6 @@ app:
       # OAuth 2.0 Web client ID from Google Cloud Console.
       # Google Sign-In is disabled while this is blank.
       client-id: ${GOOGLE_CLIENT_ID:}
+    tokens:
+      email-verification-ttl: ${EMAIL_VERIFICATION_TTL:24h}
+      password-reset-ttl: ${PASSWORD_RESET_TTL:1h}

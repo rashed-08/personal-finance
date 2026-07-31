@@ -51,7 +51,12 @@ JWT claims: `sub` (user id), `email`, `role`, `iss` (`personal-finance`), `iat`,
 | POST | `/api/auth/google` | none | Sign in with a Google ID token |
 | POST | `/api/auth/refresh` | refresh cookie | Rotate refresh token, new access token |
 | POST | `/api/auth/logout` | refresh cookie | Revoke the session, clear the cookie |
+| POST | `/api/auth/verify-email` | none | Consume an emailed verification token |
+| POST | `/api/auth/resend-verification` | none | Resend the verification email |
+| POST | `/api/auth/forgot-password` | none | Email a password-reset link |
+| POST | `/api/auth/reset-password` | none | Consume a reset token, set a new password |
 | GET | `/api/users/me` | Bearer | Current user profile |
+| PUT | `/api/users/me/password` | Bearer | Change password (requires current password) |
 
 Every other `/api/**` endpoint requires a valid Bearer access token and returns `401` otherwise.
 
@@ -190,6 +195,43 @@ Idempotent: succeeds even when the cookie is absent or already revoked. No reque
 
 ---
 
+# Email flows
+
+Registration triggers a verification email automatically (best-effort — a mail outage never fails the
+registration). Locally, all mail lands in **Mailpit** (`http://localhost:8025`, service in `infra/compose.yaml`).
+Emailed links point at the frontend: `{FRONTEND_BASE_URL}/verify-email?token=…` and
+`{FRONTEND_BASE_URL}/reset-password?token=…`. All one-time tokens are stored hashed, are single-use, and expire.
+
+## POST /api/auth/verify-email
+
+Body `{ "token": "..." }`. Marks the user's email verified and consumes the token.
+**204** on success, **400** for an unknown/expired/used token.
+
+## POST /api/auth/resend-verification
+
+Body `{ "email": "user@example.com" }`. Always **204** — whether the email exists or is already verified is
+not observable (no user enumeration).
+
+## POST /api/auth/forgot-password
+
+Body `{ "email": "user@example.com" }`. Always **204** (no user enumeration). A reset token (TTL 1h) is only
+issued and emailed when the account exists **and** has a local password (Google-only accounts get nothing).
+
+## POST /api/auth/reset-password
+
+Body `{ "token": "...", "newPassword": "..." }` (8–72 chars). Consumes the token, sets the password, and
+**revokes every refresh token** — all sessions must log in again.
+**204** on success, **400** for an unknown/expired/used token.
+
+## PUT /api/users/me/password
+
+Requires `Authorization: Bearer`. Body `{ "currentPassword": "...", "newPassword": "..." }`.
+Verifies the current password, sets the new one, and revokes every refresh token.
+**204** on success, **401** for a wrong current password, **400** when the account has no local password
+(Google-only — use forgot-password to set one).
+
+---
+
 # GET /api/users/me
 
 Requires `Authorization: Bearer <accessToken>`.
@@ -225,10 +267,14 @@ Requires `Authorization: Bearer <accessToken>`.
 | `app.security.jwt.refresh-token-ttl` | `JWT_REFRESH_TOKEN_TTL` | `14d` | Refresh token lifetime |
 | `app.security.cookie-secure` | `COOKIE_SECURE` | `false` | Mark refresh cookie `Secure` (enable behind HTTPS) |
 | `app.security.google.client-id` | `GOOGLE_CLIENT_ID` | — (feature disabled when blank) | Google OAuth Web client ID (ID-token audience) |
+| `app.security.tokens.email-verification-ttl` | `EMAIL_VERIFICATION_TTL` | `24h` | Verification token lifetime |
+| `app.security.tokens.password-reset-ttl` | `PASSWORD_RESET_TTL` | `1h` | Reset token lifetime |
+| `app.mail.from` | `MAIL_FROM` | `noreply@personal-finance.local` | Sender address |
+| `app.frontend-base-url` | `FRONTEND_BASE_URL` | `http://localhost:5173` | Base URL for emailed links |
+| `spring.mail.host` / `port` / … | `SPRING_MAIL_*` | Mailpit (localhost:1025) in `local` | SMTP server |
 
 ---
 
 # Future (tracked in the auth epic #11)
 
-- Email verification, forgot/reset/change password (#33)
-- Frontend integration, including the Google Sign-In button (#34)
+- Frontend integration, including the Google Sign-In button and email-flow pages (#34)

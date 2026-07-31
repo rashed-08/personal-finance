@@ -2,15 +2,23 @@ package io.rashed.finance.api.controller;
 
 import io.rashed.finance.api.dto.auth.AuthDtoMapper;
 import io.rashed.finance.api.dto.auth.AuthResponse;
+import io.rashed.finance.api.dto.auth.ForgotPasswordRequest;
 import io.rashed.finance.api.dto.auth.GoogleSignInRequest;
 import io.rashed.finance.api.dto.auth.LoginRequest;
 import io.rashed.finance.api.dto.auth.RegisterRequest;
+import io.rashed.finance.api.dto.auth.ResendVerificationRequest;
+import io.rashed.finance.api.dto.auth.ResetPasswordRequest;
+import io.rashed.finance.api.dto.auth.VerifyEmailRequest;
 import io.rashed.finance.application.auth.AuthResult;
+import io.rashed.finance.application.auth.ForgotPasswordService;
 import io.rashed.finance.application.auth.GoogleSignInService;
 import io.rashed.finance.application.auth.LoginService;
 import io.rashed.finance.application.auth.LogoutService;
 import io.rashed.finance.application.auth.RefreshTokenService;
 import io.rashed.finance.application.auth.RegisterUserService;
+import io.rashed.finance.application.auth.ResetPasswordService;
+import io.rashed.finance.application.auth.SendEmailVerificationService;
+import io.rashed.finance.application.auth.VerifyEmailService;
 import jakarta.validation.Valid;
 
 import java.time.Duration;
@@ -24,6 +32,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -41,6 +50,10 @@ public class AuthController {
     private final GoogleSignInService googleSignInService;
     private final RefreshTokenService refreshTokenService;
     private final LogoutService logoutService;
+    private final SendEmailVerificationService sendEmailVerificationService;
+    private final VerifyEmailService verifyEmailService;
+    private final ForgotPasswordService forgotPasswordService;
+    private final ResetPasswordService resetPasswordService;
     private final boolean cookieSecure;
 
     public AuthController(
@@ -49,6 +62,10 @@ public class AuthController {
             GoogleSignInService googleSignInService,
             RefreshTokenService refreshTokenService,
             LogoutService logoutService,
+            SendEmailVerificationService sendEmailVerificationService,
+            VerifyEmailService verifyEmailService,
+            ForgotPasswordService forgotPasswordService,
+            ResetPasswordService resetPasswordService,
             @Value("${app.security.cookie-secure:false}") boolean cookieSecure
     ) {
         this.registerUserService = registerUserService;
@@ -56,6 +73,10 @@ public class AuthController {
         this.googleSignInService = googleSignInService;
         this.refreshTokenService = refreshTokenService;
         this.logoutService = logoutService;
+        this.sendEmailVerificationService = sendEmailVerificationService;
+        this.verifyEmailService = verifyEmailService;
+        this.forgotPasswordService = forgotPasswordService;
+        this.resetPasswordService = resetPasswordService;
         this.cookieSecure = cookieSecure;
     }
 
@@ -67,6 +88,10 @@ public class AuthController {
         AuthResult result = registerUserService.execute(
                 AuthDtoMapper.toCommand(request)
         );
+
+        // Best-effort: EmailSender never throws, so a mail outage
+        // cannot fail the registration itself.
+        sendEmailVerificationService.sendFor(result.user());
 
         return withRefreshCookie(HttpStatus.CREATED, result);
     }
@@ -101,6 +126,44 @@ public class AuthController {
         AuthResult result = refreshTokenService.execute(refreshToken);
 
         return withRefreshCookie(HttpStatus.OK, result);
+    }
+
+    @PostMapping("/verify-email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request
+    ) {
+
+        verifyEmailService.execute(request.token());
+    }
+
+    @PostMapping("/resend-verification")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resendVerification(
+            @Valid @RequestBody ResendVerificationRequest request
+    ) {
+
+        // Always 204 — must not reveal whether the email exists.
+        sendEmailVerificationService.resend(request.email());
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+
+        // Always 204 — must not reveal whether the email exists.
+        forgotPasswordService.execute(request.email());
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+
+        resetPasswordService.execute(request.token(), request.newPassword());
     }
 
     @PostMapping("/logout")
