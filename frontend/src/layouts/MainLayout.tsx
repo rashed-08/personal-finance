@@ -1,6 +1,16 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+
+import { useAuth } from "../hooks/useAuth";
 
 export default function MainLayout() {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    async function handleLogout() {
+        await logout();
+        navigate("/login", { replace: true });
+    }
+
     return (
         <div className="app-shell">
             <aside className="sidebar">
@@ -107,6 +117,30 @@ export default function MainLayout() {
                         📥 Import
                     </NavLink>
                 </nav>
+
+                <div className="sidebar__footer">
+                    <NavLink
+                        to="/profile"
+                        className={({ isActive }) =>
+                            isActive ? "user-chip user-chip--active" : "user-chip"
+                        } >
+                        <span className="user-chip__avatar">
+                            {user?.name?.charAt(0).toUpperCase() ?? "?"}
+                        </span>
+                        <span className="user-chip__text">
+                            <span className="user-chip__name">{user?.name}</span>
+                            <span className="user-chip__email">{user?.email}</span>
+                        </span>
+                    </NavLink>
+
+                    <button
+                        type="button"
+                        className="btn btn--ghost btn--sm btn--block"
+                        onClick={handleLogout}
+                    >
+                        Sign Out
+                    </button>
+                </div>
             </aside>
 
             <main className="content">
