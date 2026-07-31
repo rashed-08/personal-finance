@@ -1,6 +1,14 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
+import AuthLayout from "../layouts/AuthLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import LoginPage from "../app/login/page";
+import RegisterPage from "../app/register/page";
+import ForgotPasswordPage from "../app/forgot-password/page";
+import ResetPasswordPage from "../app/reset-password/page";
+import VerifyEmailPage from "../app/verify-email/page";
+import ProfilePage from "../app/profile/page";
 import DashboardPage from "../app/dashboard/page";
 import ReportsPage from "../app/reports/page";
 import AccountsPage from "../app/accounts/page";
@@ -16,67 +24,106 @@ import ImportPage from "../app/import/page";
 export default function AppRoutes() {
     return (
         <Routes>
-            <Route path="/" element={<MainLayout />}>
+            {/* Public — signed-in visitors are bounced to the dashboard */}
+            <Route element={<AuthLayout />}>
                 <Route
-                    index
-                    element={<Navigate to="/dashboard" replace />}
+                    path="login"
+                    element={<LoginPage />}
                 />
 
                 <Route
-                    path="dashboard"
-                    element={<DashboardPage />}
+                    path="register"
+                    element={<RegisterPage />}
                 />
 
                 <Route
-                    path="reports"
-                    element={<ReportsPage />}
+                    path="forgot-password"
+                    element={<ForgotPasswordPage />}
                 />
 
                 <Route
-                    path="accounts"
-                    element={<AccountsPage />}
+                    path="reset-password"
+                    element={<ResetPasswordPage />}
                 />
+            </Route>
 
+            {/* Works signed in or out: a new user follows this from their inbox */}
+            <Route element={<AuthLayout redirectIfAuthenticated={false} />}>
                 <Route
-                    path="categories"
-                    element={<CategoriesPage />}
+                    path="verify-email"
+                    element={<VerifyEmailPage />}
                 />
+            </Route>
 
-                <Route
-                    path="transactions"
-                    element={<TransactionsPage />}
-                />
+            {/* Everything below requires authentication */}
+            <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<MainLayout />}>
+                    <Route
+                        index
+                        element={<Navigate to="/dashboard" replace />}
+                    />
 
-                <Route
-                    path="salary-cycles"
-                    element={<SalaryCyclesPage />}
-                />
+                    <Route
+                        path="dashboard"
+                        element={<DashboardPage />}
+                    />
 
-                <Route
-                    path="cash-reconciliation"
-                    element={<CashReconciliationPage />}
-                />
+                    <Route
+                        path="reports"
+                        element={<ReportsPage />}
+                    />
 
-                <Route
-                    path="funds"
-                    element={<FundsPage />}
-                />
+                    <Route
+                        path="accounts"
+                        element={<AccountsPage />}
+                    />
 
-                <Route
-                    path="loans"
-                    element={<LoansPage />}
-                />
+                    <Route
+                        path="categories"
+                        element={<CategoriesPage />}
+                    />
 
-                <Route
-                    path="recurring-transactions"
-                    element={<RecurringTransactionsPage />}
-                />
+                    <Route
+                        path="transactions"
+                        element={<TransactionsPage />}
+                    />
 
-                <Route
-                    path="import"
-                    element={<ImportPage />}
-                />
+                    <Route
+                        path="salary-cycles"
+                        element={<SalaryCyclesPage />}
+                    />
 
+                    <Route
+                        path="cash-reconciliation"
+                        element={<CashReconciliationPage />}
+                    />
+
+                    <Route
+                        path="funds"
+                        element={<FundsPage />}
+                    />
+
+                    <Route
+                        path="loans"
+                        element={<LoansPage />}
+                    />
+
+                    <Route
+                        path="recurring-transactions"
+                        element={<RecurringTransactionsPage />}
+                    />
+
+                    <Route
+                        path="import"
+                        element={<ImportPage />}
+                    />
+
+                    <Route
+                        path="profile"
+                        element={<ProfilePage />}
+                    />
+
+                </Route>
             </Route>
         </Routes>
     );

@@ -105,6 +105,25 @@ indicates the token may have been stolen.
 
 ---
 
+# Frontend
+
+The SPA holds the access token **in memory only** (`src/auth/tokenStore.ts`) — never `localStorage`, so an XSS
+payload cannot exfiltrate a long-lived credential. Sessions survive a page reload because `AuthProvider` calls
+`POST /api/auth/refresh` on mount, using the httpOnly cookie.
+
+| Concern | Where |
+|---------|-------|
+| Session state | `src/auth/AuthProvider.tsx`, consumed via `useAuth()` |
+| Token attach + 401 recovery | axios interceptors in `src/api/api.ts` |
+| Route guarding | `src/routes/ProtectedRoute.tsx` wraps every in-app route |
+| Public pages | `src/layouts/AuthLayout.tsx` (login, register, reset, verify) |
+
+The response interceptor retries a 401 exactly once after refreshing, sharing a single in-flight refresh promise
+across concurrent failures. `/auth/**` responses are excluded — a 401 there is a genuine credential failure.
+When refresh fails, the session is cleared, the React Query cache is dropped, and the user lands on `/login`.
+
+---
+
 # Testing
 
 - Unit: `JwtServiceTest`, `RegisterUserServiceTest`, `LoginServiceTest`, `RefreshTokenServiceTest`,
@@ -115,10 +134,9 @@ indicates the token may have been stolen.
 
 ---
 
-# Future Work (auth epic #11)
+# Future Work
 
-- Google Sign-In via ID-token verification (#32)
-- Email verification + forgot/reset/change password; password change revokes all sessions (#33)
-- Frontend auth context, interceptors, protected routes (#34)
 - Role-restricted endpoints once multiple users/roles exist
-- Cleanup job purging expired/revoked refresh tokens
+- Multi-user data scoping (`user_id` on the financial tables)
+- Cleanup job purging expired/revoked refresh and one-time tokens
+- Session listing / "sign out other devices" UI on top of `refresh_tokens`
