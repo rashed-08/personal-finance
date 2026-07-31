@@ -21,3 +21,9 @@ spring:
 logging:
   level:
     org.hibernate.SQL: debug
+
+app:
+  security:
+    jwt:
+      # Dev-only key for the local profile. Never use outside local development.
+      secret: ${JWT_SECRET:local-dev-only-secret-key-change-me-0123456789}
