@@ -1,8 +1,11 @@
 package io.rashed.finance.api.advice;
 
+import io.rashed.finance.common.exception.InvalidCredentialsException;
+import io.rashed.finance.common.exception.InvalidRefreshTokenException;
 import io.rashed.finance.common.exception.ResourceNotFoundException;
 import io.rashed.finance.common.exception.TransactionValidationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,6 +47,30 @@ public class GlobalExceptionHandler {
 
         problem.setTitle("Invalid State Transition");
         problem.setDetail(ex.getMessage());
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
+
+    @ExceptionHandler({InvalidCredentialsException.class, InvalidRefreshTokenException.class})
+    public ProblemDetail handleAuthenticationFailure(RuntimeException ex) {
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+
+        problem.setTitle("Authentication Failed");
+        problem.setDetail(ex.getMessage());
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+
+        problem.setTitle("Access Denied");
+        problem.setDetail("You do not have permission to access this resource.");
         problem.setProperty("timestamp", Instant.now());
 
         return problem;

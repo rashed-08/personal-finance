@@ -11,3 +11,15 @@ spring:
 
 server:
   port: 8080
+
+app:
+  security:
+    # Set to true behind HTTPS in production.
+    cookie-secure: ${COOKIE_SECURE:false}
+    jwt:
+      # HMAC-SHA256 key, at least 32 bytes. No default on purpose:
+      # each environment must provide its own (local profile has a dev-only value).
+      secret: ${JWT_SECRET:}
+      issuer: personal-finance
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+      refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:14d}
