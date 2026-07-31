@@ -8,6 +8,11 @@ spring:
   flyway:
     enabled: true
 
+  # Mailpit from infra/compose.yaml — web UI at http://localhost:8025
+  mail:
+    host: localhost
+    port: 1025
+
   jpa:
     open-in-view: false
 
