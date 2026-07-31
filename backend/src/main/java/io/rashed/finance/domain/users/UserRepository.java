@@ -10,5 +10,7 @@ public interface UserRepository {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByProviderSubject(String providerSubject);
+
     boolean existsByEmail(String email);
 }
