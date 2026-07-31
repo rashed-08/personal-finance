@@ -275,6 +275,8 @@ Requires `Authorization: Bearer <accessToken>`.
 
 ---
 
-# Future (tracked in the auth epic #11)
+# Client Integration
 
-- Frontend integration, including the Google Sign-In button and email-flow pages (#34)
+The React SPA (`frontend/`) consumes these endpoints via `src/services/auth.service.ts`. Token handling,
+the 401-refresh-retry interceptor, and route guarding are described in
+`docs/architecture/SecurityArchitecture.md`. `VITE_API_URL` points the SPA at this API.

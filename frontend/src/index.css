@@ -1185,6 +1185,214 @@ a {
 }
 
 /* =============================================================================
+   Auth pages
+   ========================================================================== */
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 16px;
+  background: var(--bg);
+}
+
+.auth-bootstrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 28px;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.auth-header {
+  margin-bottom: 20px;
+}
+
+.auth-title {
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.auth-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-footer {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth-link {
+  color: var(--primary);
+  font-weight: 550;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-link--field {
+  align-self: flex-end;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.google-button {
+  display: flex;
+  justify-content: center;
+}
+
+.google-button--busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.btn--block {
+  width: 100%;
+  justify-content: center;
+}
+
+.form-actions--stretch > .btn {
+  flex: 1;
+}
+
+/* =============================================================================
+   Sidebar user area
+   ========================================================================== */
+
+.sidebar__footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+  min-width: 0;
+}
+
+.user-chip:hover,
+.user-chip--active {
+  background: var(--surface-2);
+}
+
+.user-chip__avatar {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--primary-weak);
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+  font-size: 13px;
+}
+
+.user-chip__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-chip__name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-chip__email {
+  font-size: 11px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =============================================================================
+   Profile
+   ========================================================================== */
+
+.profile-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-row:last-child {
+  border-bottom: none;
+}
+
+.profile-row__label {
+  width: 130px;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.profile-row__value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 550;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* =============================================================================
    Responsive
    ========================================================================== */
 
@@ -1209,4 +1417,20 @@ a {
   .nav__label { display: none; }
   .content { padding: 20px 16px 40px; }
   .page-header { flex-direction: column; align-items: stretch; }
+
+  .sidebar__footer {
+    margin-top: 0;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 0;
+    border-top: none;
+  }
+  .user-chip__text { display: none; }
+  .btn--block { width: auto; }
+  .profile-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .profile-row__label { width: auto; }
 }
