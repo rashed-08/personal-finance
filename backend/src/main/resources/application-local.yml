@@ -28,6 +28,17 @@ logging:
     org.hibernate.SQL: debug
 
 app:
+  mail:
+    # Off by default so no SMTP server is needed to develop: messages, including
+    # verification and reset links, are written to the application log.
+    # To send for real: docker compose -f infra/compose.yaml up -d mailpit
+    # then run with MAIL_ENABLED=true (inbox at http://localhost:8025).
+    enabled: ${MAIL_ENABLED:false}
+
+  # Log in immediately on a fresh database — credentials are printed at startup.
+  default-user:
+    enabled: ${DEFAULT_USER_ENABLED:true}
+
   security:
     jwt:
       # Dev-only key for the local profile. Never use outside local development.
