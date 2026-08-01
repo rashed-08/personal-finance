@@ -24,7 +24,18 @@ app:
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
 
   mail:
+    # false writes messages (verification/reset links included) to the log
+    # instead of sending them. Local development only — see SmtpEmailSender.
+    enabled: ${MAIL_ENABLED:true}
     from: ${MAIL_FROM:noreply@personal-finance.local}
+
+  # Seeds a known account on startup. Off here on purpose; the local
+  # profile turns it on. Never enable it in a deployed environment.
+  default-user:
+    enabled: ${DEFAULT_USER_ENABLED:false}
+    email: ${DEFAULT_USER_EMAIL:owner@personal-finance.local}
+    password: ${DEFAULT_USER_PASSWORD:password123}
+    name: ${DEFAULT_USER_NAME:Default Owner}
 
   security:
     # Set to true behind HTTPS in production.

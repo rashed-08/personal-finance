@@ -198,9 +198,30 @@ Idempotent: succeeds even when the cookie is absent or already revoked. No reque
 # Email flows
 
 Registration triggers a verification email automatically (best-effort — a mail outage never fails the
-registration). Locally, all mail lands in **Mailpit** (`http://localhost:8025`, service in `infra/compose.yaml`).
-Emailed links point at the frontend: `{FRONTEND_BASE_URL}/verify-email?token=…` and
+registration). Emailed links point at the frontend: `{FRONTEND_BASE_URL}/verify-email?token=…` and
 `{FRONTEND_BASE_URL}/reset-password?token=…`. All one-time tokens are stored hashed, are single-use, and expire.
+
+## Local development: two options
+
+**No SMTP server (default).** `app.mail.enabled` is `false` in the `local` profile, so each message is written
+to the application log instead of being sent — copy the link straight from the console:
+
+```
+[mail disabled] would send to you@example.com
+  Subject: Verify your email — Personal Finance
+  http://localhost:5173/verify-email?token=V6r5drHJhS0P9DIm…
+```
+
+Because that puts one-time tokens in the log, **only ever disable mail in local development.**
+
+**Real delivery via Mailpit.** Start the service and switch mail on:
+
+```
+docker compose -f infra/compose.yaml up -d mailpit
+MAIL_ENABLED=true ./mvnw spring-boot:run    # inbox at http://localhost:8025
+```
+
+If mail is enabled but the server is unreachable, a single warning is logged and the request still succeeds.
 
 ## POST /api/auth/verify-email
 
@@ -269,9 +290,33 @@ Requires `Authorization: Bearer <accessToken>`.
 | `app.security.google.client-id` | `GOOGLE_CLIENT_ID` | — (feature disabled when blank) | Google OAuth Web client ID (ID-token audience) |
 | `app.security.tokens.email-verification-ttl` | `EMAIL_VERIFICATION_TTL` | `24h` | Verification token lifetime |
 | `app.security.tokens.password-reset-ttl` | `PASSWORD_RESET_TTL` | `1h` | Reset token lifetime |
+| `app.mail.enabled` | `MAIL_ENABLED` | `true` (`false` in `local`) | Send email, or log it instead |
 | `app.mail.from` | `MAIL_FROM` | `noreply@personal-finance.local` | Sender address |
 | `app.frontend-base-url` | `FRONTEND_BASE_URL` | `http://localhost:5173` | Base URL for emailed links |
 | `spring.mail.host` / `port` / … | `SPRING_MAIL_*` | Mailpit (localhost:1025) in `local` | SMTP server |
+| `app.default-user.enabled` | `DEFAULT_USER_ENABLED` | `false` (`true` in `local`) | Seed a login on startup |
+| `app.default-user.email` | `DEFAULT_USER_EMAIL` | `owner@personal-finance.local` | Seeded account's email |
+| `app.default-user.password` | `DEFAULT_USER_PASSWORD` | `password123` | Seeded account's password |
+| `app.default-user.name` | `DEFAULT_USER_NAME` | `Default Owner` | Seeded account's display name |
+
+---
+
+# Default Development User
+
+On a fresh database there is no account to log in with, so the `local` profile seeds one at startup
+(`DefaultUserInitializer`) and prints the credentials:
+
+```
+ Created the default development user
+   email:    owner@personal-finance.local
+   password: password123
+```
+
+It is created pre-verified with the `OWNER` role, and creation is skipped when the email already exists — so
+restarting never overwrites a password you changed.
+
+**This is off by default and only enabled in the `local` profile.** A known password must never exist in a
+deployed environment; set `DEFAULT_USER_ENABLED=false` to disable it locally too.
 
 ---
 
