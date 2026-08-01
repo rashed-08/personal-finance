@@ -1276,6 +1276,28 @@ a {
 .google-button {
   display: flex;
   justify-content: center;
+  min-height: 40px;
+}
+
+/* Development-only notice when VITE_GOOGLE_CLIENT_ID is unset. */
+.google-button-placeholder {
+  padding: 12px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.google-button-placeholder code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 4px;
 }
 
 .google-button--busy {

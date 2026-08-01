@@ -104,7 +104,26 @@ export default function GoogleSignInButton({ onCredential, disabled }: Props) {
     }, [clientId]);
 
     if (!clientId) {
-        return null;
+        // Production hides the button entirely — end users cannot act on a
+        // missing server-side setting. In development, say so on the page:
+        // rendering nothing at all just looks like the feature is broken.
+        if (!import.meta.env.DEV) {
+            return null;
+        }
+
+        return (
+            <>
+                <div className="auth-divider">
+                    <span>or</span>
+                </div>
+
+                <div className="google-button-placeholder">
+                    Google Sign-In is hidden because <code>VITE_GOOGLE_CLIENT_ID</code> is
+                    not set. Add it to the <code>.env</code> file in the project root and
+                    restart the dev server. This notice only appears in development.
+                </div>
+            </>
+        );
     }
 
     return (
