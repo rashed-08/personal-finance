@@ -9,6 +9,8 @@ import io.rashed.finance.application.auth.GoogleUserInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,8 +38,13 @@ public class GoogleIdTokenVerifierAdapter implements GoogleTokenVerifier {
             return Optional.empty();
         }
 
+        // Resolved outside the catch on purpose: a missing client ID is a
+        // server misconfiguration, not a bad token, and must not be reported
+        // to the caller as a credential failure.
+        GoogleIdTokenVerifier verifier = verifier();
+
         try {
-            GoogleIdToken token = verifier().verify(idToken);
+            GoogleIdToken token = verifier.verify(idToken);
 
             if (token == null) {
                 return Optional.empty();
@@ -52,7 +59,8 @@ public class GoogleIdTokenVerifierAdapter implements GoogleTokenVerifier {
                     (String) payload.get("name")
             ));
 
-        } catch (Exception ex) {
+        } catch (GeneralSecurityException | IOException | IllegalArgumentException ex) {
+            // Bad signature, wrong audience, expired, or malformed.
             return Optional.empty();
         }
     }

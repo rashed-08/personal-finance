@@ -16,9 +16,12 @@ import java.util.Objects;
  * Changes the password of an authenticated user. Requires the current
  * password and revokes every refresh token afterwards, ending all
  * sessions (the client re-authenticates with the new password).
+ *
+ * Not final: {@code @Transactional} is applied through a CGLIB proxy,
+ * which cannot subclass a final class.
  */
 @Service
-public final class ChangePasswordService {
+public class ChangePasswordService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;

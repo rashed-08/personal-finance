@@ -17,9 +17,12 @@ import java.util.Optional;
  * 2. Existing user with the same (Google-verified) email → link the
  *    Google identity to that account.
  * 3. Otherwise → register a new user.
+ *
+ * Not final: {@code @Transactional} is applied through a CGLIB proxy,
+ * which cannot subclass a final class.
  */
 @Service
-public final class GoogleSignInService {
+public class GoogleSignInService {
 
     private final GoogleTokenVerifier googleTokenVerifier;
     private final UserRepository userRepository;
@@ -41,13 +44,17 @@ public final class GoogleSignInService {
     @Transactional
     public AuthResult execute(String idToken) {
 
+        // Unlike email/password login there is no enumeration risk here, so
+        // the messages can say what actually went wrong.
         GoogleUserInfo info = googleTokenVerifier.verify(idToken)
-                .orElseThrow(() -> new InvalidCredentialsException());
+                .orElseThrow(() -> new InvalidCredentialsException(
+                        "Google sign-in failed: the ID token is not valid."));
 
         if (!info.emailVerified()) {
             // Never link or create accounts from an email Google has not
             // verified — it could belong to someone else.
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException(
+                    "Google has not verified this email address.");
         }
 
         User user = userRepository.findByProviderSubject(info.subject())

@@ -140,7 +140,13 @@ class AuthFlowIntegrationTest {
                         .cookie(refreshCookie))
                 .andExpect(status().isUnauthorized());
 
-        refreshCookie = rotated;
+        // Reuse means the token may have been stolen, so every session dies —
+        // including the replacement issued moments ago. Only a real database
+        // proves this: the revocation must survive the failing request's
+        // transaction rather than being rolled back with it.
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(rotated))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

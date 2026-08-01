@@ -11,9 +11,12 @@ import java.util.Objects;
 
 /**
  * Consumes an email-verification token and marks the user's email verified.
+ *
+ * Not final: {@code @Transactional} is applied through a CGLIB proxy,
+ * which cannot subclass a final class.
  */
 @Service
-public final class VerifyEmailService {
+public class VerifyEmailService {
 
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
