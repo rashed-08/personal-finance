@@ -165,6 +165,30 @@ Same shape as `/login` (body + refresh cookie).
 | 401 | Token invalid/expired/wrong audience, or Google reports the email as unverified |
 | 409 | `GOOGLE_CLIENT_ID` is not configured on the server |
 
+## Setup
+
+Google Sign-In stays **switched off until a client ID exists** — the backend answers 409 and the frontend hides
+the button (in development it shows a note explaining why instead of rendering nothing).
+
+1. In [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials), create an
+   **OAuth client ID** of type **Web application**.
+2. Add the dev origin under *Authorised JavaScript origins*: `http://localhost:5173`.
+   Google Identity Services refuses to render the button on an origin that is not listed.
+   No redirect URI is needed — this is the ID-token flow, not the redirect flow.
+3. Put the same value in the root `.env` under **both** names — the backend verifies the audience, the
+   frontend renders the button:
+
+   ```
+   GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+   VITE_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+   ```
+
+4. Restart both the backend and the Vite dev server. `VITE_*` values are read at startup, so a running dev
+   server will not pick up the change.
+
+Vite reads that root `.env` because `frontend/vite.config.ts` sets `envDir: '..'`. Only `VITE_`-prefixed
+variables reach the browser, so the backend secrets in the same file are not bundled.
+
 ---
 
 # POST /api/auth/refresh
