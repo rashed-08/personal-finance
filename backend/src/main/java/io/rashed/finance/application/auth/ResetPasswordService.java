@@ -14,9 +14,12 @@ import java.util.Objects;
 /**
  * Consumes a password-reset token, sets the new password, and revokes
  * every refresh token so all sessions must re-authenticate.
+ *
+ * Not final: {@code @Transactional} is applied through a CGLIB proxy,
+ * which cannot subclass a final class.
  */
 @Service
-public final class ResetPasswordService {
+public class ResetPasswordService {
 
     private final PasswordResetTokenRepository tokenRepository;
     private final UserRepository userRepository;

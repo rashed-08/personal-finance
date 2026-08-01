@@ -13,9 +13,12 @@ import java.util.Objects;
 /**
  * Rotates a refresh token: the presented token is revoked and a new
  * token pair is issued.
+ *
+ * Not final: {@code @Transactional} is applied through a CGLIB proxy,
+ * which cannot subclass a final class.
  */
 @Service
-public final class RefreshTokenService {
+public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
@@ -34,7 +37,12 @@ public final class RefreshTokenService {
                 Objects.requireNonNull(issueTokensService, "IssueTokensService cannot be null.");
     }
 
-    @Transactional
+    /**
+     * {@code noRollbackFor}: the reuse-detection branch revokes every session
+     * and then fails the request. A rollback would undo that revocation, so
+     * the theft response has to survive the exception.
+     */
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public AuthResult execute(String rawRefreshToken) {
 
         if (rawRefreshToken == null || rawRefreshToken.isBlank()) {

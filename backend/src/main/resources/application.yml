@@ -12,6 +12,13 @@ spring:
 server:
   port: 8080
 
+management:
+  health:
+    mail:
+      # Sending email is best-effort (see SmtpEmailSender), so an unreachable
+      # SMTP server must not report the whole application as DOWN.
+      enabled: false
+
 app:
   # Base URL used in emailed links (verification, password reset).
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
