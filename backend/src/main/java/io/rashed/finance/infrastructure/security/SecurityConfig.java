@@ -25,7 +25,7 @@ import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, GoogleOAuthProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
 

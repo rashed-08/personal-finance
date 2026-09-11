@@ -20,6 +20,9 @@ import FundsPage from "../app/funds/page";
 import LoansPage from "../app/loans/page";
 import RecurringTransactionsPage from "../app/recurring-transactions/page";
 import ImportPage from "../app/import/page";
+import BackupPage from "../app/backup/page";
+import SettingsPage from "../app/settings/page";
+import GoogleDriveCallbackPage from "../app/google-drive-callback/page";
 
 export default function AppRoutes() {
     return (
@@ -116,6 +119,24 @@ export default function AppRoutes() {
                     <Route
                         path="import"
                         element={<ImportPage />}
+                    />
+
+                    <Route
+                        path="backup"
+                        element={<BackupPage />}
+                    />
+
+                    <Route
+                        path="settings"
+                        element={<SettingsPage />}
+                    />
+
+                    {/* Google redirects the browser here after consent.
+                        Must match app.security.google.drive-redirect-uri
+                        and the URI registered in the Google Cloud console. */}
+                    <Route
+                        path="settings/google-drive/callback"
+                        element={<GoogleDriveCallbackPage />}
                     />
 
                     <Route

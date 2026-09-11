@@ -12,7 +12,10 @@ Each migration is immutable once it has been executed in a shared environment.
 |----------|-------------|
 | V1 | Initial database schema (all tables, constraints, triggers, indexes) |
 | V2 | Seed data (default categories, application settings, starter funds) |
-| V3+ | Future schema/data changes |
+| V3 | Authentication schema (`users`, `refresh_tokens`) |
+| V4 | One-time tokens for email flows (verification, password reset) |
+| V5 | Backup and settings support (`backup_history.operation_type`/`backup_format`/`storage_reference`, `google_oauth_tokens`, backup setting keys) |
+| V6+ | Future schema/data changes |
 
 Consolidated from a longer chain of incremental migrations (formerly V1–V10) while the project is still in
 development and every local database can be recreated from scratch. Schema fixes that were originally separate

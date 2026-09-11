@@ -1,5 +1,37 @@
 # Settings Table Specification
 
+> ## ⚠ This document does not match the shipped schema
+>
+> It specifies a **singleton row with typed columns** (`currency`, `locale`, `timezone`, `salary_day`,
+> `theme`, …). What `V1__initial_schema.sql` actually creates is a **key-value table**:
+>
+> ```sql
+> CREATE TABLE settings (
+>     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+>     setting_key    VARCHAR(100) NOT NULL,   -- e.g. DEFAULT_CURRENCY
+>     setting_value  TEXT,                    -- stored as text
+>     value_type     VARCHAR(20) NOT NULL,    -- STRING|INTEGER|DECIMAL|BOOLEAN|DATE|JSON
+>     description    TEXT,
+>     is_system      BOOLEAN NOT NULL DEFAULT FALSE,
+>     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+>     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+>     CONSTRAINT uk_settings_key UNIQUE (setting_key)
+> );
+> ```
+>
+> `V2__seed_data.sql` seeds nine keys into it and `V5__backup_and_settings.sql` adds five more. The
+> application reads them through `SettingsProvider`, a typed facade over the same table.
+>
+> **The key-value form is what is built and what the API exposes.** The columns below describe an earlier
+> design that was never implemented; several of its fields (`locale`, `timezone`, `theme`,
+> `default_cash_account_id`, `salary_day`, `fiscal_year_start_month`, `auto_create_salary_cycles`) have no
+> equivalent key yet.
+>
+> For the settings that do exist, their types and their defaults, see **`docs/api/Settings.md`**.
+>
+> Reconciling this document (or migrating the schema to it) is outstanding work, deliberately left for a
+> separate change — it would mean discarding seeded rows and making every future setting a migration.
+
 ## Purpose
 
 The `settings` table stores global application configuration and user preferences.

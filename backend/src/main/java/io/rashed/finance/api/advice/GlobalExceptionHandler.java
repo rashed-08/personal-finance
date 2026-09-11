@@ -1,5 +1,6 @@
 package io.rashed.finance.api.advice;
 
+import io.rashed.finance.application.backup.BackupFailedException;
 import io.rashed.finance.common.exception.InvalidCredentialsException;
 import io.rashed.finance.common.exception.InvalidRefreshTokenException;
 import io.rashed.finance.common.exception.ResourceNotFoundException;
@@ -71,6 +72,29 @@ public class GlobalExceptionHandler {
 
         problem.setTitle("Access Denied");
         problem.setDetail("You do not have permission to access this resource.");
+        problem.setProperty("timestamp", Instant.now());
+
+        return problem;
+    }
+
+    /**
+     * A backup, restore or storage operation could not run: Drive is not
+     * connected, {@code pg_dump} is missing, an upload failed.
+     *
+     * 503 rather than 500 because these are expected, diagnosable states
+     * of an external dependency rather than faults in this application,
+     * and the message is written to tell the operator what to fix. A bad
+     * confirmation phrase or a failed checksum is a client error and
+     * arrives here as {@link TransactionValidationException} (400)
+     * instead.
+     */
+    @ExceptionHandler(BackupFailedException.class)
+    public ProblemDetail handleBackupFailure(BackupFailedException ex) {
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+
+        problem.setTitle("Backup Unavailable");
+        problem.setDetail(ex.getMessage());
         problem.setProperty("timestamp", Instant.now());
 
         return problem;

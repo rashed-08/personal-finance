@@ -9,6 +9,13 @@ spring:
   banner:
     location: classpath:banner.txt
 
+  servlet:
+    multipart:
+      # Restoring uploads a whole backup archive. The 1MB default would
+      # reject anything but a nearly empty ledger.
+      max-file-size: ${MAX_BACKUP_UPLOAD_SIZE:256MB}
+      max-request-size: ${MAX_BACKUP_UPLOAD_SIZE:256MB}
+
 server:
   port: 8080
 
@@ -37,9 +44,31 @@ app:
     password: ${DEFAULT_USER_PASSWORD:password123}
     name: ${DEFAULT_USER_NAME:Default Owner}
 
+  backup:
+    # Schedule for the automatic backup. Spring binds a cron expression at
+    # startup, so this cannot live in the settings table; the
+    # AUTO_BACKUP_ENABLED setting decides whether a run does anything and
+    # does take effect immediately.
+    cron: ${AUTO_BACKUP_CRON:0 0 2 * * *}
+
+    postgres:
+      # Only needed for the PG_DUMP backup format. Absolute paths if the
+      # PostgreSQL client tools are not on PATH.
+      pg-dump: ${PG_DUMP_PATH:pg_dump}
+      pg-restore: ${PG_RESTORE_PATH:pg_restore}
+      timeout: ${PG_TOOL_TIMEOUT:10m}
+
   security:
     # Set to true behind HTTPS in production.
     cookie-secure: ${COOKIE_SECURE:false}
+
+    encryption:
+      # AES key material for third-party credentials held at rest — today
+      # only the Google Drive refresh token, which must be replayable and
+      # so cannot be hashed. Optional: without it the app runs normally and
+      # only Google Drive backup is unavailable.
+      # Generate one with: openssl rand -base64 48
+      secret: ${ENCRYPTION_SECRET:}
     jwt:
       # HMAC-SHA256 key, at least 32 bytes. No default on purpose:
       # each environment must provide its own (local profile has a dev-only value).
@@ -51,6 +80,13 @@ app:
       # OAuth 2.0 Web client ID from Google Cloud Console.
       # Google Sign-In is disabled while this is blank.
       client-id: ${GOOGLE_CLIENT_ID:}
+
+      # Google Drive backup additionally runs the authorization-code flow
+      # for offline access, which needs the client secret and a redirect
+      # URI registered against the same OAuth client. Drive backup is
+      # disabled while either is blank; Sign-In is unaffected.
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+      drive-redirect-uri: ${GOOGLE_DRIVE_REDIRECT_URI:http://localhost:5173/settings/google-drive/callback}
     tokens:
       email-verification-ttl: ${EMAIL_VERIFICATION_TTL:24h}
       password-reset-ttl: ${PASSWORD_RESET_TTL:1h}
