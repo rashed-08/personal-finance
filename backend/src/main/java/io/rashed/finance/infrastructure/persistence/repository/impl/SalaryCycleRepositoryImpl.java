@@ -53,7 +53,11 @@ public class SalaryCycleRepositoryImpl implements SalaryCycleRepository {
     @Override
     public Optional<SalaryCycle> findByDate(LocalDate date) {
 
+        // Overlapping cycles are possible (see findContaining) — take the
+        // most recently started one rather than letting Hibernate throw.
         return jpaRepository.findContaining(date)
+                .stream()
+                .findFirst()
                 .map(SalaryCycleEntityMapper::toDomain);
     }
 
