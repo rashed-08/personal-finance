@@ -78,6 +78,13 @@ public class RestoreBackupService {
                             + source.getOperation() + " in state " + source.getStatus() + ".");
         }
 
+        if (!source.hasStoredArchive()) {
+            throw new TransactionValidationException(
+                    "The archive for " + source.getFileName()
+                            + " has been deleted, so there is nothing to restore from. "
+                            + "Upload a copy of the file instead if you still have one.");
+        }
+
         BackupStorage storage = storages.requireAvailable(source.getProvider());
 
         BackupRecord record = backupRepository.save(

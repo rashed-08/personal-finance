@@ -28,11 +28,12 @@ public final class BackupDtoMapper {
     }
 
     /**
-     * A restore has no archive of its own, and a failed or in-progress
-     * backup never finished writing one.
+     * A restore has no archive of its own, a failed or in-progress backup
+     * never finished writing one, and a deleted or pruned archive no
+     * longer exists.
      */
     private static boolean isDownloadable(BackupRecord record) {
 
-        return record.isBackup() && record.isCompleted();
+        return record.isBackup() && record.isCompleted() && record.hasStoredArchive();
     }
 }

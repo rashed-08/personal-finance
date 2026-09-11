@@ -52,12 +52,23 @@ public class DeleteBackupService {
             return;
         }
 
+        if (!record.hasStoredArchive()) {
+            // Already deleted or pruned. Deleting twice is not an error:
+            // the requested outcome is that the archive is gone.
+            return;
+        }
+
         storages.get(record.getProvider())
                 .delete(new BackupStorage.StoredArchiveLocation(
                         record.getFileName(),
                         record.getFilePath(),
                         record.getStorageReference()
                 ));
+
+        // The record has to be updated too, or the deletion is invisible:
+        // the entry would keep reporting a file path and keep offering
+        // download and restore for an archive that no longer exists.
+        backupRepository.save(record.archiveRemoved());
 
         log.info("Deleted archive for backup {}", record.getFileName());
     }

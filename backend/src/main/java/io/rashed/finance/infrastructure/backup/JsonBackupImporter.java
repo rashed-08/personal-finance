@@ -154,9 +154,25 @@ public class JsonBackupImporter implements BackupImporter {
     private void deleteExistingRows() {
 
         for (String table : BackupTables.deleteOrder()) {
-            // Children first, so plain DELETE never trips a foreign key.
-            // Not TRUNCATE: it cannot be rolled back as cheaply and would
-            // need CASCADE, which reaches tables this backup excludes.
+
+            // Break self-references before deleting the table.
+            //
+            // fk_transactions_reference_transaction is ON DELETE RESTRICT,
+            // and Postgres checks RESTRICT immediately, per row — unlike
+            // NO ACTION it cannot be deferred to the end of the statement.
+            // So a single "DELETE FROM transactions" fails as soon as it
+            // reaches a row that another row references, even though that
+            // other row is being deleted by the same statement. Any ledger
+            // containing a reversal or a reconciliation adjustment has
+            // such a pair.
+            for (String column : BackupTables.selfReferencingColumns(table)) {
+                jdbcTemplate.update("UPDATE " + table + " SET " + column + " = NULL");
+            }
+
+            // Children first, so plain DELETE never trips a foreign key
+            // between tables. Not TRUNCATE: it cannot be rolled back as
+            // cheaply and would need CASCADE, which reaches tables this
+            // backup excludes.
             jdbcTemplate.update("DELETE FROM " + table);
         }
     }

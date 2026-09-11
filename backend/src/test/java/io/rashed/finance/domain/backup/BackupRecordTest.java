@@ -11,6 +11,7 @@ import io.rashed.finance.common.enums.BackupType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -183,5 +184,86 @@ class BackupRecordTest {
                         "archive.zip"
                 ).isStoredLocally()
         );
+    }
+
+    // -------------------------------------------------------------------------
+    // Archive lifetime
+    // -------------------------------------------------------------------------
+
+    @Test
+    void aCompletedBackupHasAStoredArchive() {
+
+        assertTrue(startedBackup().complete("/backups/a.zip", null, 10L, "c").hasStoredArchive());
+    }
+
+    @Test
+    void aDriveBackupIsLocatedByItsStorageReference() {
+
+        assertTrue(
+                startedBackup()
+                        .complete("https://drive.google.com/file/d/abc", "abc", 10L, "c")
+                        .hasStoredArchive()
+        );
+    }
+
+    @Test
+    void anOpenOrFailedRecordHasNoStoredArchive() {
+
+        assertFalse(startedBackup().hasStoredArchive());
+        assertFalse(startedBackup().fail("Disk full").hasStoredArchive());
+    }
+
+    @Test
+    void aRestoreHasNoStoredArchive() {
+
+        // It consumes an archive rather than producing one.
+        assertFalse(
+                BackupRecord.startRestore(BackupProvider.LOCAL, BackupFormat.JSON, "a.zip")
+                        .complete(null, null, 10L, "c")
+                        .hasStoredArchive()
+        );
+    }
+
+    @Test
+    void archiveRemoved_clearsTheLocationButKeepsTheEntry() {
+
+        BackupRecord completed = startedBackup()
+                .complete("/backups/a.zip", "drive-id", 2048L, "checksum");
+
+        BackupRecord removed = completed.archiveRemoved();
+
+        assertFalse(removed.hasStoredArchive());
+        assertEquals(null, removed.getFilePath());
+        assertEquals(null, removed.getStorageReference());
+
+        // Everything that makes the entry an audit record survives, so a
+        // deleted backup stays distinguishable from one that never ran.
+        assertEquals(completed.getId(), removed.getId());
+        assertEquals(completed.getFileName(), removed.getFileName());
+        assertEquals(2048L, removed.getFileSize());
+        assertEquals("checksum", removed.getChecksum());
+        assertEquals(BackupStatus.COMPLETED, removed.getStatus());
+        assertEquals(completed.getStartedAt(), removed.getStartedAt());
+        assertEquals(completed.getCompletedAt(), removed.getCompletedAt());
+    }
+
+    @Test
+    void archiveRemoved_isIdempotent() {
+
+        BackupRecord removed = startedBackup()
+                .complete("/backups/a.zip", null, 10L, "c")
+                .archiveRemoved();
+
+        assertSame(removed, removed.archiveRemoved());
+    }
+
+    @Test
+    void archiveRemoved_isNotBlockedByTheClosedRecordGuard() {
+
+        // Unlike complete() and fail() this is not a second outcome for the
+        // operation, it is the later fate of its artefact.
+        BackupRecord completed = startedBackup().complete("/backups/a.zip", null, 10L, "c");
+
+        assertFalse(completed.archiveRemoved().hasStoredArchive());
     }
 }

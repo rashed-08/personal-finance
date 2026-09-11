@@ -194,7 +194,7 @@ something is wrong.
 
 | Status | Condition |
 |--------|-----------|
-| `400 Bad Request` | The entry is a restore, or a backup that failed or is still running — there is no archive |
+| `400 Bad Request` | The entry is a restore, a backup that failed or is still running, or a backup whose archive has since been deleted — there is no archive |
 | `404 Not Found` | No such history entry |
 | `503 Service Unavailable` | The archive is missing from storage or could not be read |
 
@@ -204,6 +204,10 @@ something is wrong.
 
 Deletes the stored archive. **The history entry is kept** — history is append-only, so a deleted backup stays
 distinguishable from one that never happened.
+
+The entry's `filePath` and `storageReference` are cleared and `downloadable` becomes `false`; `fileName`,
+`fileSize`, `checksum` and the timestamps remain, as the record of what was taken. After this, download and
+restore for that entry return `400` with an explanation rather than failing inside the storage layer.
 
 ## Response — `204 No Content`
 
@@ -368,7 +372,7 @@ the application has still forgotten the credential, which is what was asked for.
 | `checksum` | string, nullable | Lowercase hex SHA-256 |
 | `status` | enum | `IN_PROGRESS`, `COMPLETED`, `FAILED` |
 | `errorMessage` | string, nullable | Failure reason, truncated to 2000 characters |
-| `downloadable` | boolean | Whether the archive can still be fetched — true only for a completed backup |
+| `downloadable` | boolean | Whether the archive can still be fetched. True only for a completed backup whose archive has not been deleted or pruned |
 
 ---
 
