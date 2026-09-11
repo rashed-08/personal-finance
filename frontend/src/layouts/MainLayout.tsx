@@ -116,6 +116,24 @@ export default function MainLayout() {
                         } >
                         📥 Import
                     </NavLink>
+
+                    <NavLink
+                        to="/backup"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        💾 Backup
+                    </NavLink>
+
+                    <div className="nav__label">System</div>
+
+                    <NavLink
+                        to="/settings"
+                        className={({ isActive }) =>
+                            isActive ? "nav__item nav__item--active" : "nav__item"
+                        } >
+                        ⚙️ Settings
+                    </NavLink>
                 </nav>
 
                 <div className="sidebar__footer">

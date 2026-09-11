@@ -1,5 +1,34 @@
 # Backup History Table Specification
 
+> ## ⚠ Column names here differ from the shipped schema
+>
+> The intent of this document — an immutable, append-only audit trail covering both backups and restores — is
+> exactly what is implemented. The **column names and some enum values are different**:
+>
+> | This document | Actual column | Values as built |
+> |---------------|---------------|-----------------|
+> | `operation_type` | `operation_type` | `BACKUP`, `RESTORE` — added by `V5__backup_and_settings.sql` |
+> | `storage_provider` | `provider` | `LOCAL`, `GOOGLE_DRIVE`, `S3` |
+> | `status` | `backup_status` | `IN_PROGRESS`, `COMPLETED`, `FAILED` — not `SUCCESS`/`FAILED` |
+> | `file_size_bytes` | `file_size` | Same meaning |
+> | `started_at` | `backup_started_at` | Same meaning |
+> | `completed_at` | `backup_completed_at` | Same meaning |
+> | — | `backup_type` | `MANUAL`, `AUTOMATIC`. Not in this document |
+> | — | `backup_format` | `JSON`, `PG_DUMP`. Added by V5 |
+> | — | `file_path` | Local path or Drive link |
+> | — | `storage_reference` | Provider-assigned object id (the Drive file id). Added by V5 |
+>
+> Two substantive differences from the description below:
+>
+> 1. **`IN_PROGRESS` exists.** A row is opened before the work starts and closed afterwards, so a crash
+>    mid-operation leaves evidence. A `SUCCESS`-or-`FAILED` scheme could not express that.
+> 2. **`V1` could not record a restore at all** — it had `backup_type` (`MANUAL`/`AUTOMATIC`) and no
+>    operation column. `V5__backup_and_settings.sql` adds `operation_type` so the audit trail covers restores
+>    as this document always intended.
+>
+> The "Storage Layout", "Lifecycle", "Business Rules" and "Integrity Verification" sections below are
+> accurate. For the API view of this table, see **`docs/api/Backup.md`**.
+
 ## Purpose
 
 The `backup_history` table records every backup and restore operation performed by the application.
