@@ -51,7 +51,9 @@ public class AccountRepositoryImpl implements AccountRepository {
     @Override
     public Optional<Account> findByName(String name) {
 
-        return jpaRepository.findByNameIgnoreCase(name)
+        return jpaRepository.findByNameIgnoreCaseOrderByCreatedAtAsc(name)
+                .stream()
+                .findFirst()
                 .map(AccountEntityMapper::toDomain);
     }
 

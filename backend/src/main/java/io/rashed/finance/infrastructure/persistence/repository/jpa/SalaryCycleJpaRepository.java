@@ -19,12 +19,28 @@ public interface SalaryCycleJpaRepository extends JpaRepository<SalaryCycleEntit
 
     boolean existsByCycleName(String cycleName);
 
+    /**
+     * Every cycle covering the date, most recently started first.
+     *
+     * <p>Returns a list rather than an {@code Optional} because nothing
+     * enforces that at most one cycle covers a date: salary_cycles has no
+     * exclusion constraint, and an open cycle (cycle_end_date IS NULL)
+     * covers every date after its start, so it overlaps every cycle opened
+     * later. An {@code Optional} return made Hibernate throw
+     * NonUniqueResultException ("Query did not return a unique result") on
+     * such ledgers, which surfaced as a 500 — notably from the Google Keep
+     * import, which resolves a cycle per imported month.
+     *
+     * <p>Callers wanting the single best match take the first element: the
+     * latest start is the most specific cycle for that date.
+     */
     @Query("""
             SELECT c FROM SalaryCycleEntity c
             WHERE c.cycleStartDate <= :date
               AND (c.cycleEndDate IS NULL OR c.cycleEndDate >= :date)
+            ORDER BY c.cycleStartDate DESC, c.id ASC
             """)
-    Optional<SalaryCycleEntity> findContaining(LocalDate date);
+    List<SalaryCycleEntity> findContaining(LocalDate date);
 
     Optional<SalaryCycleEntity> findByCycleEndDateIsNull();
 

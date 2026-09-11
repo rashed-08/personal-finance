@@ -6,13 +6,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface AccountJpaRepository extends JpaRepository<AccountEntity, UUID> {
 
-    Optional<AccountEntity> findByNameIgnoreCase(String name);
+    /**
+     * Accounts with this name, oldest first. A list, not an
+     * {@code Optional}: accounts.name has no unique index, so two accounts
+     * can share a name (differing only in case is enough) and an
+     * {@code Optional} return would throw NonUniqueResultException instead
+     * of answering. Callers take the first — the original row.
+     */
+    List<AccountEntity> findByNameIgnoreCaseOrderByCreatedAtAsc(String name);
 
     boolean existsByNameIgnoreCase(String name);
 

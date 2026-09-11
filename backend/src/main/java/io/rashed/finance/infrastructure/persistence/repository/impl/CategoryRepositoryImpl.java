@@ -47,7 +47,9 @@ public class CategoryRepositoryImpl
     @Override
     public Optional<Category> findByName(String name) {
 
-        return repository.findByName(name)
+        return repository.findByNameOrderByCreatedAtAsc(name)
+                .stream()
+                .findFirst()
                 .map(CategoryEntityMapper::toDomain);
     }
 
