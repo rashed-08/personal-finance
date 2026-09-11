@@ -271,4 +271,22 @@ class RestoreBackupServiceTest {
         assertTrue(failed.isFailed());
         assertEquals("not a JSON backup", failed.getErrorMessage());
     }
+
+    @Test
+    void restoreFromHistory_rejectsABackupWhoseArchiveWasDeleted() {
+
+        givenStoredBackup(completedBackup(CHECKSUM).archiveRemoved());
+
+        TransactionValidationException thrown = assertThrows(
+                TransactionValidationException.class,
+                () -> service.restoreFromHistory(BackupId.newId(), RestoreBackupService.CONFIRMATION)
+        );
+
+        // A clear message, not whatever the storage layer says about a
+        // null path.
+        assertTrue(thrown.getMessage().contains("deleted"));
+
+        verify(storage, never()).retrieve(any());
+        verify(importer, never()).restore(any());
+    }
 }

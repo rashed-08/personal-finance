@@ -41,6 +41,13 @@ public class DownloadBackupService {
                     "Only a completed backup has an archive to download.");
         }
 
+        if (!record.hasStoredArchive()) {
+            throw new TransactionValidationException(
+                    "The archive for " + record.getFileName()
+                            + " has been deleted. The history entry is kept for the record, "
+                            + "but there is no file left to download.");
+        }
+
         BackupArchive archive = storages.requireAvailable(record.getProvider())
                 .retrieve(new BackupStorage.StoredArchiveLocation(
                         record.getFileName(),

@@ -85,6 +85,16 @@ export default function BackupHistoryTable({ backups, onRestore }: Props) {
                                         {backup.errorMessage}
                                     </div>
                                 )}
+
+                                {/* A completed backup with no archive left:
+                                    deleted by hand or pruned by retention.
+                                    Said explicitly, or the row looks
+                                    identical to one still holding a file. */}
+                                {backup.operation === "BACKUP" &&
+                                    backup.status === "COMPLETED" &&
+                                    !backup.downloadable && (
+                                        <div className="cell-desc">Archive deleted</div>
+                                    )}
                             </td>
 
                             <td className="col-right">

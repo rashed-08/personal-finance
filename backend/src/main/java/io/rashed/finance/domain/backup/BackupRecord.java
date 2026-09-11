@@ -327,6 +327,59 @@ public final class BackupRecord {
         return checksum != null && !checksum.isBlank();
     }
 
+    /**
+     * Whether the archive this record describes still exists.
+     *
+     * False once it has been deleted or pruned, and for a restore, which
+     * consumes an archive rather than producing one.
+     */
+    public boolean hasStoredArchive() {
+
+        return (filePath != null && !filePath.isBlank())
+                || (storageReference != null && !storageReference.isBlank());
+    }
+
+    /**
+     * Records that the archive is gone, keeping the entry itself.
+     *
+     * Clearing the location is what makes a deletion observable: the entry
+     * survives — with its name, size, checksum and timestamps, so it stays
+     * distinguishable from a backup that never happened — but it no longer
+     * claims to have a file behind it, and
+     * {@link #hasStoredArchive()} stops offering it for download or
+     * restore.
+     *
+     * Not guarded by {@code requireOpen()}: unlike
+     * {@link #complete} and {@link #fail} this is not a second outcome for
+     * the operation, it is the later fate of its artefact. Idempotent, so
+     * deleting twice is not an error.
+     */
+    public BackupRecord archiveRemoved() {
+
+        if (!hasStoredArchive()) {
+            return this;
+        }
+
+        return new BackupRecord(
+                id,
+                operation,
+                backupType,
+                provider,
+                format,
+                fileName,
+                null,
+                null,
+                fileSize,
+                checksum,
+                status,
+                errorMessage,
+                startedAt,
+                completedAt,
+                createdAt,
+                LocalDateTime.now()
+        );
+    }
+
     public boolean isStoredLocally() {
         return provider == BackupProvider.LOCAL;
     }

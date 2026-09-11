@@ -66,8 +66,14 @@ with a warning. A *renamed or retyped* column is not something this can paper ov
 `DatabaseSnapshot.SCHEMA_VERSION` is for: a future importer can detect and refuse an archive it would
 mis-restore.
 
-**Self-references.** `transactions.reference_transaction_id` points at another row in the same table, so the
-importer nulls it on insert and links it in a second pass once every row exists. This avoids needing deferrable
+**Self-references.** `transactions.reference_transaction_id` points at another row in the same table, and its
+foreign key is `ON DELETE RESTRICT`. Postgres checks `RESTRICT` immediately, per row, and — unlike `NO ACTION`
+— cannot defer it to the end of the statement, so a single `DELETE FROM transactions` fails the moment it
+reaches a row another row references, even though that row is being deleted by the same statement. Any ledger
+holding a reversal or a reconciliation adjustment contains such a pair.
+
+The importer therefore handles the column on both sides: it nulls the references before deleting, and on
+insert it writes `null` and links them in a second pass once every row exists. This avoids needing deferrable
 constraints or elevated privileges.
 
 ## PG_DUMP — the faithful one
@@ -157,7 +163,8 @@ archives behind the rest. `0` disables pruning. One unreachable archive does not
 nor fail the backup that just succeeded.
 
 **History entries always survive pruning.** Only archives are deleted, so a pruned backup stays
-distinguishable from one that never happened.
+distinguishable from one that never happened. The entry's stored location is cleared, which is how a pruned or
+deleted archive stops being offered for download and restore.
 
 ---
 
